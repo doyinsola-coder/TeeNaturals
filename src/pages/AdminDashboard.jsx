@@ -481,7 +481,14 @@ const SectionOverview = ({ stats, orders, setActive }) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // SECTION: PRODUCTS
 // ─────────────────────────────────────────────────────────────────────────────
-const PRODUCT_DEFAULTS = { name:"", price:"", category:"", countInStock:"", description:"", image:"" };
+const PRODUCT_CATEGORIES = [
+  { value:"SKINCARE",    label:"Skincare"    },
+  { value:"HAIRCARE",    label:"Haircare"    },
+  { value:"BABYCARE",    label:"Babycare"    },
+  { value:"ACCESSORIES", label:"Accessories" },
+];
+
+const PRODUCT_DEFAULTS = { name:"", price:"", category:"SKINCARE", countInStock:"", description:"", image:"" };
 
 const SectionProducts = ({ toast }) => {
   const [products, setProducts] = useState([]);
@@ -571,7 +578,7 @@ console.log("Selected file:", file);
 
   const openAdd = () => { setForm(PRODUCT_DEFAULTS); setEditId(null); setModal(true); };
   const openEdit = p => {
-    setForm({ name:p.name||"", price:p.price||"", category:p.category||"",
+    setForm({ name:p.name||"", price:p.price||"", category:p.category||"SKINCARE",
       countInStock:p.countInStock||"", description:p.description||"", image:p.image||"" });
     setEditId(p._id); setModal(true);
   };
@@ -580,7 +587,7 @@ console.log("Selected file:", file);
     if (!form.name||!form.price) return toast("Name and price are required","error");
     setSaving(true);
     try {
-      const payload = { ...form, price:Number(form.price), countInStock:Number(form.countInStock)||0, category:form.category||"Skincare"};
+      const payload = { ...form, price:Number(form.price), countInStock:Number(form.countInStock)||0, category:form.category||"SKINCARE"};
       if (editId) await api.put(`/products/${editId}`, payload);
       else        await api.post("/products", payload);
       toast(editId?"Product updated":"Product created","success");
@@ -691,7 +698,8 @@ console.log("Selected file:", file);
               onChange={v=>setForm(f=>({...f,price:v}))} required />
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
-            {/* <Input label="Category" value={form.category} onChange={v=>setForm(f=>({...f,category:v}))} /> */}
+            <Select label="Category" value={form.category} onChange={v=>setForm(f=>({...f,category:v}))}
+              options={PRODUCT_CATEGORIES} />
             <Input label="Stock Qty" type="number" min="0" value={form.countInStock}
               onChange={v=>setForm(f=>({...f,countInStock:v}))} />
           </div>
