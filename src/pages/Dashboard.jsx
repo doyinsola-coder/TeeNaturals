@@ -18,17 +18,21 @@ const T = {
   goldPale:   "#fdf8e7",
   cream:      "#faf7f2",
   surface:    "#ffffff",
+  surfaceEl:  "rgba(26,58,46,0.06)",
   red:        "#b43228",
   redBd:      "rgba(180,50,40,0.3)",
   border:     "rgba(26,58,46,0.09)",
   borderMid:  "rgba(26,58,46,0.16)",
   muted:      "rgba(26,58,46,0.45)",
   faint:      "rgba(26,58,46,0.06)",
+  textPri:    "#1a3a2e",
+  textSec:    "rgba(26,58,46,0.45)",
   fontDisplay:"'Playfair Display', Georgia, serif",
   fontAccent: "'Cormorant Garamond', Georgia, serif",
   fontBody:   "'Plus Jakarta Sans', sans-serif",
   shadow:     "0 1px 3px rgba(26,58,46,0.06), 0 4px 16px rgba(26,58,46,0.06)",
   shadowMd:   "0 4px 24px rgba(26,58,46,0.10), 0 1px 4px rgba(26,58,46,0.06)",
+  shadowLg:   "0 24px 64px rgba(0,0,0,0.18)",
 };
 
 
@@ -351,32 +355,18 @@ const Topbar = ({ active, user, onLogout, onMenuClick }) => {
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
-
-        <div>
-          <div className="px-6 pb-7 mt-10 mb-5">
-            <div className="flex items-center gap-2.5">
-               <div>
-                <div
-                  className="text-[17px] font-bold hidden md:block"
-                  style={{
-                    fontFamily: T.fontDisplay,
-                    color: T.green,
-                  }}
-                >
-                  TeeNatural
-                </div>
-              </div>
-              <div
-                className="w-[38px] h-[38px] rounded-xl flex items-center justify-center text-[18px] shadow-[0_4px_12px_rgba(212,175,55,0.35)]"
-                style={{
-                  background: `linear-gradient(135deg, ${T.gold}, ${T.goldLight})`,
-                }}
-              >
-                🌿
-              </div>
-            </div>
-          </div>
+      <div className="flex items-center gap-2.5">
+        <div
+          className="text-[17px] font-bold hidden md:block"
+          style={{ fontFamily: T.fontDisplay, color: T.green }}
+        >
+          TeeNatural
+        </div>
+        <div
+          className="w-[38px] h-[38px] rounded-xl flex items-center justify-center text-[18px] shadow-[0_4px_12px_rgba(212,175,55,0.35)]"
+          style={{ background: `linear-gradient(135deg, ${T.gold}, ${T.goldLight})` }}
+        >
+          🌿
         </div>
       </div>
 
@@ -579,12 +569,11 @@ const SectionProfile = ({ user, loading }) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // SECTION: ORDERS
 // ─────────────────────────────────────────────────────────────────────────────
-const SectionOrders = ({ orders }) => {
+const SectionOrders = ({ orders, loading }) => {
   const [filter, setFilter] = useState("all");
   const [detailId, setDetailId] = useState(null);
   const [delTarget, setDelTarget] = useState(null);
-  const [loading, setLoading] = useState(false);
-const navigate = useNavigate();
+  const navigate = useNavigate();
   const filtered = filter === "all" ? orders
     : filter === "paid" ? orders.filter(o => o.isPaid)
     : orders.filter(o => !o.isPaid);
@@ -592,15 +581,6 @@ const navigate = useNavigate();
   const sorted = [...filtered].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
   const detail = orders.find(o => o._id === detailId);
 
- const load = useCallback(()=>{
-    setLoading(true);
-    api.get("/orders/my")
-      .then(r=>setProducts(r.data?.products||r.data||[]))
-      .catch(()=>toast("Failed to load products","error"))
-      .finally(()=>setLoading(false));
-  },[toast]);
-
-  useEffect(()=>{ load(); },[load]);
   const Btn = ({
   children,
   onClick,
@@ -722,7 +702,7 @@ const openAdd = () => {
     try {
       await api.delete(`/orders/${delTarget}`);
       toast.success("Order deleted");
-      setDelTarget(null); load();
+      setDelTarget(null);
       window.location.reload();
     } catch (error) {
       toast.error("Failed to delete order");
@@ -1031,9 +1011,10 @@ const SectionHome = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    navigate("/")
-  }, [navigate])
+    navigate("/");
+  }, [navigate]);
 
+  return null;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1047,76 +1028,43 @@ const Dashboard = () => {
   const [userLoading, setUserLoading] = useState(true);
   const [orders,      setOrders]      = useState([]);
   const [ordLoading,  setOrdLoading]  = useState(true);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isVerifying, setIsVerifying] = useState(false);
-
-  // useEffect(() => {
-  //   const verifyPaymentOnLanding = async () => {
-  //     // 1. Extract the unique transaction reference code from Paystack's redirect URL
-  //     const reference = searchParams.get('reference');
-      
-  //     if (!reference) return; // Exit if the user just opened the dashboard normally
-
-  //     try {
-  //       console.log(`Sending reference ${reference} to backend for verification...`);
-        
-  //       // 2. Fetch user auth token from local storage
-  //       const token = localStorage.getItem("tn_token");
-  //        // 3. Hit your backend verification route manually via a standard GET request
-  //       const response = await api.get(
-  //         `/orders/verify/${reference}`,
-  //         {
-  //           headers: {
-  //             Authorization: `Bearer ${token}`,
-  //           },
-  //         }
-  //       );
-
-  //       console.log("Backend verification response:", response.data);
-  //       alert("Payment verified successfully! Your order is now marked as paid.");
-        
-  //       // 4. Clean up local storage cart data since payment is confirmed
-  //       localStorage.removeItem("cartItems");
-
-  //     } catch (error) {
-  //       console.error("Frontend verification bridge failure:", error);
-  //     }
-  //   };
-
-  //   verifyPaymentOnLanding();
-  // }, [searchParams]);
 
   // ── Auth guard ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (!localStorage.getItem("tn_token")) navigate("/login");
   }, [navigate]);
 
+  // ── Verify Paystack payment on redirect back ───────────────────────────
   useEffect(() => {
     const confirmPayment = async () => {
       const reference = searchParams.get("reference");
-      
-      if (!reference) return; // No payment to verify
-      
+      if (!reference) return;
+
       setIsVerifying(true);
       try {
-        // Hit your backend GET /verify/:reference fallback endpoint manually
-        const token = localStorage.getItem("tn_token");
-        await axios.get(
-          `https://onrender.com{reference}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        console.log("✅ Payment status verified over secure frontend fallback bridge.");
-        // Clear your frontend cart items state variable here if needed!
+        const response = await api.get(`/orders/verify/${reference}`);
+        if (response.data?.success !== false) {
+          toast.success("Payment verified successfully! Your order is now marked as paid.");
+        } else {
+          toast.error("We couldn't confirm this payment. Please contact support if you were charged.");
+        }
       } catch (err) {
-        console.error("Verification fallback error:", err);
+        console.error("Payment verification failed:", err.message || err);
+        toast.error("We couldn't verify your payment. Please contact support if you were charged.");
       } finally {
         setIsVerifying(false);
+        setSearchParams(prev => {
+          prev.delete("reference");
+          return prev;
+        }, { replace: true });
       }
     };
 
     confirmPayment();
   }, [searchParams]);
- 
+
 
   // ── Fetch profile ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -1167,6 +1115,22 @@ const Dashboard = () => {
           onMenuClick={() => setMobileOpen(true)}
         />
 
+        <AnimatePresence>
+          {isVerifying && (
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+              style={{
+                display: "flex", alignItems: "center", gap: 10,
+                margin: "16px 24px 0", padding: "10px 16px", borderRadius: 12,
+                background: T.goldPale, border: "1px solid rgba(212,175,55,0.3)",
+              }}>
+              <Spinner size={16} color={T.gold} />
+              <span style={{ fontFamily: T.fontBody, fontSize: 13, fontWeight: 600, color: "#92600a" }}>
+                Securing transaction payment status…
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <main style={{ flex: 1, padding: "28px 24px", maxWidth: 1100, width: "100%", margin: "0 auto" }}>
           <AnimatePresence mode="wait">
             <motion.div key={active}
@@ -1176,10 +1140,6 @@ const Dashboard = () => {
             </motion.div>
           </AnimatePresence>
         </main>
-
-        <div>
-          {isVerifying ? <h2>🔄 Securing transaction payment status...</h2> : <h2>Your Orders Dashboard</h2>}
-        </div>
 
         {/* Footer */}
         <footer style={{ padding: "16px 24px", borderTop: `1px solid ${T.border}`,
