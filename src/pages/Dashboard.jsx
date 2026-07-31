@@ -191,10 +191,6 @@ const Sidebar = ({ active, setActive, user, onLogout, mobileOpen, setMobileOpen 
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: "20px 12px", display: "flex", flexDirection: "column", gap: 2 }}>
-        {/* <div style={{ fontFamily: T.fontBody, fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
-          textTransform: "uppercase", color: T.muted, padding: "0 12px", marginBottom: 8 }}>
-          Navigation
-        </div> */}
         {NAV.map(item => {
           const isActive = active === item.id;
           return (
@@ -885,11 +881,15 @@ const openAdd = () => {
 // ─────────────────────────────────────────────────────────────────────────────
 // SECTION: PRODUCTS
 // ─────────────────────────────────────────────────────────────────────────────
-const SectionProducts = () => {
+const SectionProducts = ({ user }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState("");
   const [search, setSearch]     = useState("");
+  const [selected, setSelected] = useState(null); // product for detail modal
+  const [qty, setQty]           = useState(1);
+  const [buying, setBuying]     = useState(false);
+  const [buyError, setBuyError] = useState("");
 
   useEffect(() => {
     api.get("/products")
@@ -901,6 +901,54 @@ const SectionProducts = () => {
   const filtered = products.filter(p =>
     p.name?.toLowerCase().includes(search.toLowerCase())
   );
+
+  const openProduct = (p) => {
+    setSelected(p);
+    setQty(1);
+    setBuyError("");
+  };
+  const closeProduct = () => { if (!buying) setSelected(null); };
+
+  // Same proven flow as the /products page: POST /orders → POST /orders/pay → redirect
+  const handleBuyNow = async (product) => {
+    if (!user?.email) {
+      setBuyError("Could not find your email. Please re-login.");
+      return;
+    }
+    setBuying(true);
+    setBuyError("");
+    try {
+      const totalPrice = product.price * qty;
+
+      const { data: order } = await api.post("/orders", {
+        orderItems: [{
+          product: product._id,
+          name: product.name,
+          price: product.price,
+          quantity: qty,
+          image: product.image,
+        }],
+        totalPrice,
+      });
+
+      const orderId = order._id;
+      if (!orderId) throw new Error("Order creation failed.");
+
+      const { data: paystack } = await api.post("/orders/pay", {
+        email: user.email,
+        amount: totalPrice,
+        orderId,
+      });
+
+      const paymentUrl = paystack?.data?.authorization_url;
+      if (!paymentUrl) throw new Error("Unable to initialize payment.");
+
+      window.location.href = paymentUrl;
+    } catch (err) {
+      setBuyError(err?.response?.data?.message || err?.message || "Checkout failed.");
+      setBuying(false);
+    }
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -953,11 +1001,7 @@ const SectionProducts = () => {
               <div style={{ height: 160, background: T.greenPale, position: "relative", overflow: "hidden" }}>
                 {p.image ? (
                   <img src={p.image} alt={p.name}
-                    style={{ width: "100%", height: "100%", objectFit: "cover",
-                      transition: "transform 0.4s ease" }}
-                    onMouseEnter={e => e.target.style.transform = "scale(1.06)"}
-                    onMouseLeave={e => e.target.style.transform = "scale(1)"}
-                  />
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
                   <div style={{ width: "100%", height: "100%", display: "flex",
                     alignItems: "center", justifyContent: "center", fontSize: 40, opacity: 0.4 }}>
@@ -990,6 +1034,7 @@ const SectionProducts = () => {
                 )}
                 <div style={{ marginTop: "auto", paddingTop: 10 }}>
                   <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                    onClick={() => openProduct(p)}
                     style={{
                       width: "100%", padding: "9px", borderRadius: 10, border: "none",
                       background: T.green, color: T.goldLight, cursor: "pointer",
@@ -1003,6 +1048,85 @@ const SectionProducts = () => {
           ))}
         </div>
       )}
+
+      {/* Product detail / buy modal */}
+      <AnimatePresence>
+        {selected && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={closeProduct}
+              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 60, backdropFilter: "blur(4px)" }} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.93, y: 24 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.93, y: 24 }}
+              transition={{ type: "spring", stiffness: 280, damping: 24 }}
+              style={{ position: "fixed", inset: 0, zIndex: 70,
+                display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+              <div style={{ background: T.surface, borderRadius: 24, width: "100%", maxWidth: 440,
+                boxShadow: "0 24px 64px rgba(0,0,0,0.18)", overflow: "hidden" }}>
+                <div style={{ padding: "20px 24px", borderBottom: `1px solid ${T.border}`,
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  background: `linear-gradient(135deg, ${T.green}, ${T.greenMid})` }}>
+                  <h3 style={{ fontFamily: T.fontDisplay, fontSize: 18, fontWeight: 700, color: "white", margin: 0 }}>
+                    {selected.name}
+                  </h3>
+                  <motion.button whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}
+                    onClick={closeProduct}
+                    style={{ width: 30, height: 30, borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.2)",
+                      background: "rgba(255,255,255,0.08)", color: "white", cursor: "pointer", fontSize: 14,
+                      display: "flex", alignItems: "center", justifyContent: "center" }}>✕</motion.button>
+                </div>
+
+                <div style={{ padding: 24 }}>
+                  {selected.image && (
+                    <img src={selected.image} alt={selected.name}
+                      style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 14, marginBottom: 16 }} />
+                  )}
+                  {selected.description && (
+                    <p style={{ fontFamily: T.fontBody, fontSize: 13, color: T.textSec, lineHeight: 1.6, marginBottom: 16 }}>
+                      {selected.description}
+                    </p>
+                  )}
+
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+                    <span style={{ fontFamily: T.fontDisplay, fontSize: 22, fontWeight: 700, color: T.green }}>
+                      {fmt(selected.price * qty)}
+                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <button onClick={() => setQty(q => Math.max(1, q - 1))} disabled={buying}
+                        style={{ width: 30, height: 30, borderRadius: "50%", border: `1px solid ${T.borderMid}`,
+                          background: T.faint, cursor: "pointer", fontWeight: 700 }}>−</button>
+                      <span style={{ fontWeight: 700, minWidth: 20, textAlign: "center" }}>{qty}</span>
+                      <button onClick={() => setQty(q => q + 1)} disabled={buying}
+                        style={{ width: 30, height: 30, borderRadius: "50%", border: `1px solid ${T.borderMid}`,
+                          background: T.faint, cursor: "pointer", fontWeight: 700 }}>+</button>
+                    </div>
+                  </div>
+
+                  {buyError && (
+                    <p style={{ color: T.red, fontSize: 12, marginBottom: 12, fontFamily: T.fontBody }}>{buyError}</p>
+                  )}
+
+                  <motion.button whileHover={!buying ? { scale: 1.02 } : {}} whileTap={!buying ? { scale: 0.97 } : {}}
+                    disabled={buying}
+                    onClick={() => handleBuyNow(selected)}
+                    style={{
+                      width: "100%", padding: "12px", borderRadius: 12, border: "none",
+                      background: T.green, color: T.goldLight, cursor: buying ? "not-allowed" : "pointer",
+                      fontFamily: T.fontBody, fontSize: 14, fontWeight: 700, letterSpacing: "0.04em",
+                      opacity: buying ? 0.7 : 1,
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    }}>
+                    {buying && <Spinner size={14} color={T.goldLight} />}
+                    {buying ? "Redirecting to payment…" : "Buy Now"}
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -1094,7 +1218,7 @@ const Dashboard = () => {
       case "dashboard": return <SectionDashboard user={user} orders={orders} ordersLoading={ordLoading} setActive={setActive} />;
       case "profile":   return <SectionProfile user={user} loading={userLoading} />;
       case "orders":    return <SectionOrders orders={orders} loading={ordLoading} />;
-      case "products":  return <SectionProducts />;
+      case "products":  return <SectionProducts user={user} />;
       default:          return null;
     }
   };

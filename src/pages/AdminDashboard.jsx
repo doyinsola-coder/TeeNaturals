@@ -110,7 +110,7 @@ const EmptyState = ({ icon, title, sub, action }) => (
   </div>
 );
 
-const Btn = ({ children, onClick, variant="primary", size="md", disabled=false, loading=false, danger=false, type="button" }) => {
+const Btn = ({ children, onClick, variant="primary", size="md", disabled=false, loading=false, danger=false, type="button", style }) => {
   const base = {
     display:"inline-flex", alignItems:"center", justifyContent:"center", gap:7,
     borderRadius:10, border:"none", cursor: disabled||loading?"not-allowed":"pointer",
@@ -131,7 +131,7 @@ const Btn = ({ children, onClick, variant="primary", size="md", disabled=false, 
     <motion.button type={type} onClick={onClick} disabled={disabled||loading}
       whileHover={!disabled&&!loading?{ scale:1.02, opacity:0.92 }:{}}
       whileTap={!disabled&&!loading?{ scale:0.97 }:{}}
-      style={{ ...base, ...variants[danger?"danger":variant], ...sizes[size] }}>
+      style={{ ...base, ...variants[danger?"danger":variant], ...sizes[size], ...style }}>
       {loading && <Spinner size={13} color={variant==="primary"?T.goldLight:T.textSec} />}
       {children}
     </motion.button>
@@ -514,9 +514,9 @@ useEffect(() => {
 }, []);
 
 const uploadAvatar = async (file) => {
-   
+
   if (!file) {
-    toast.error("No image selected");
+    toast("No image selected", "error");
     return null;
   }
 
@@ -537,14 +537,14 @@ const uploadAvatar = async (file) => {
   ...prev,
   image: imageUrl,
 }));
-    // toast.success("Image uploaded successfully 🖼️");
+    // toast("Image uploaded successfully 🖼️", "success");
 
-    // toast.success("Profile picture updated!");
+    // toast("Profile picture updated!", "success");
     return imageUrl;
 
   } catch (err) {
     console.error("Upload error:", err);
-    // toast.error("Image upload failed 😢");
+    // toast("Image upload failed 😢", "error");
     return null;
   }
 };
@@ -783,21 +783,6 @@ const SectionOrders = ({ toast }) => {
   const [filter,  setFilter]  = useState("all");
   const [search,  setSearch]  = useState("");
   const [saving,  setSaving]  = useState({});
-
-  useEffect(() => {
-  api.get("/admin/orders")
-    .then((r) => {
-      console.log("Orders Response:", r.data);
-      setOrders(
-        Array.isArray(r.data)
-          ? r.data
-          : r.data?.orders || []
-      );
-    })
-    .catch((err) => {
-      console.log("Orders Error:", err);
-    });
-}, []);
 
   const load = useCallback(()=>{
     setLoading(true);
@@ -1185,7 +1170,7 @@ const AdminDashboard = () => {
 
   // Fetch overview data
   useEffect(()=>{
-    api.get("/orders/my").then(r=>setOrders(Array.isArray(r.data)?r.data:r.data?.orders||[])).catch(()=>{});
+    api.get("/admin/orders").then(r=>setOrders(Array.isArray(r.data)?r.data:r.data?.orders||[])).catch(()=>{});
     api.get("/products").then(r=>setProducts(r.data?.products||r.data||[])).catch(()=>{});
     api.get("/admin/users").then(r=>setUsers(Array.isArray(r.data)?r.data:r.data?.users||[])).catch(()=>{});
   },[]);
