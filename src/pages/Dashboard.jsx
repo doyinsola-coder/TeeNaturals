@@ -842,19 +842,28 @@ const openAdd = () => {
 
                 {/* Modal body */}
                 <div style={{ padding: "22px 24px" }}>
-                  {[
-                    { label: "Order ID",       value: detail._id },
-                    { label: "Date Placed",    value: fmtDate(detail.createdAt) },
-                    { label: "Total Amount",   value: fmt(detail.totalPrice) },
-                    { label: "Payment Status", value: <Badge paid={detail.isPaid} /> },
-                    ...(detail.isPaid && detail.paidAt
-                      ? [{ label: "Paid At", value: fmtDate(detail.paidAt) }] : []),
-                    { label: "Items",          value: `${detail.orderItems?.length || 0} product(s)` },
-                  ].map((row, i) => (
+                  {(() => {
+                    const rows = [
+                      { label: "Order ID",       value: detail._id },
+                      { label: "Date Placed",    value: fmtDate(detail.createdAt) },
+                      { label: "Total Amount",   value: fmt(detail.totalPrice) },
+                      { label: "Payment Status", value: <Badge paid={detail.isPaid} /> },
+                      ...(detail.isPaid && detail.paidAt
+                        ? [{ label: "Paid At", value: fmtDate(detail.paidAt) }] : []),
+                      { label: "Items",          value: `${detail.orderItems?.length || 0} product(s)` },
+                      ...(detail.shippingAddress
+                        ? [
+                            { label: "Deliver To",  value: detail.shippingAddress.fullName },
+                            { label: "Phone",       value: detail.shippingAddress.phone },
+                            { label: "Address",     value: `${detail.shippingAddress.address}, ${detail.shippingAddress.city}, ${detail.shippingAddress.state}` },
+                          ]
+                        : []),
+                    ];
+                    return rows.map((row, i) => (
                     <div key={i} style={{
                       display: "flex", justifyContent: "space-between", alignItems: "center",
                       padding: "11px 0",
-                      borderBottom: i < 5 ? `1px solid ${T.border}` : "none",
+                      borderBottom: i < rows.length - 1 ? `1px solid ${T.border}` : "none",
                     }}>
                       <span style={{ fontFamily: T.fontBody, fontSize: 12, fontWeight: 600,
                         textTransform: "uppercase", letterSpacing: "0.07em", color: T.muted }}>
@@ -864,7 +873,8 @@ const openAdd = () => {
                         {row.value}
                       </span>
                     </div>
-                  ))}
+                    ));
+                  })()}
                 </div>
               </div>
             </motion.div>
@@ -875,6 +885,110 @@ const openAdd = () => {
         sub="This action cannot be undone. The Order will be permanently removed."
         onConfirm={handleDelete} onCancel={()=>setDelTarget(null)} />
     </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SHIPPING ADDRESS MODAL — collected once before checkout, saved for next time
+// ─────────────────────────────────────────────────────────────────────────────
+const ShippingModal = ({ open, onClose, initialAddress, onConfirm, submitting }) => {
+  const [form, setForm] = useState(initialAddress);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (open) { setForm(initialAddress); setError(""); }
+  }, [open, initialAddress]);
+
+  const set = (key) => (e) => setForm(f => ({ ...f, [key]: e.target.value }));
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!form.fullName.trim() || !form.phone.trim() || !form.address.trim() || !form.city.trim() || !form.state.trim()) {
+      setError("Please fill in every field so we know where to deliver your order.");
+      return;
+    }
+    setError("");
+    onConfirm(form);
+  };
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={submitting ? undefined : onClose}
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 80, backdropFilter: "blur(4px)" }} />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 18 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 12 }}
+            transition={{ type: "spring", stiffness: 340, damping: 28 }}
+            style={{ position: "fixed", inset: 0, zIndex: 90,
+              display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: T.surface, borderRadius: 24, width: "100%", maxWidth: 420,
+              boxShadow: "0 24px 64px rgba(0,0,0,0.18)", overflow: "hidden" }}>
+              <div style={{ padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between",
+                background: `linear-gradient(135deg, ${T.green}, ${T.greenMid})` }}>
+                <div>
+                  <h3 style={{ fontFamily: T.fontDisplay, fontSize: 18, fontWeight: 700, color: "white", margin: 0 }}>
+                    Delivery Details
+                  </h3>
+                  <p style={{ fontFamily: T.fontBody, fontSize: 12, color: "rgba(255,255,255,0.6)", margin: "2px 0 0" }}>
+                    Where should we send your order?
+                  </p>
+                </div>
+                {!submitting && (
+                  <motion.button whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}
+                    onClick={onClose}
+                    style={{ width: 30, height: 30, borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.2)",
+                      background: "rgba(255,255,255,0.08)", color: "white", cursor: "pointer", fontSize: 14,
+                      display: "flex", alignItems: "center", justifyContent: "center" }}>✕</motion.button>
+                )}
+              </div>
+
+              <form onSubmit={handleSubmit} style={{ padding: 24, display: "flex", flexDirection: "column", gap: 10 }}>
+                {[
+                  { key: "fullName", placeholder: "Full name", type: "text" },
+                  { key: "phone", placeholder: "Phone number", type: "tel" },
+                  { key: "address", placeholder: "Street address", type: "text" },
+                ].map(f => (
+                  <input key={f.key} value={form[f.key]} onChange={set(f.key)} placeholder={f.placeholder} type={f.type}
+                    disabled={submitting}
+                    style={{ padding: "11px 14px", borderRadius: 12, border: `1px solid ${T.border}`,
+                      background: T.cream, fontFamily: T.fontBody, fontSize: 13, color: T.green, outline: "none",
+                      opacity: submitting ? 0.6 : 1 }} />
+                ))}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <input value={form.city} onChange={set("city")} placeholder="City" disabled={submitting}
+                    style={{ padding: "11px 14px", borderRadius: 12, border: `1px solid ${T.border}`,
+                      background: T.cream, fontFamily: T.fontBody, fontSize: 13, color: T.green, outline: "none",
+                      opacity: submitting ? 0.6 : 1 }} />
+                  <input value={form.state} onChange={set("state")} placeholder="State" disabled={submitting}
+                    style={{ padding: "11px 14px", borderRadius: 12, border: `1px solid ${T.border}`,
+                      background: T.cream, fontFamily: T.fontBody, fontSize: 13, color: T.green, outline: "none",
+                      opacity: submitting ? 0.6 : 1 }} />
+                </div>
+
+                {error && <p style={{ color: T.red, fontSize: 12, fontFamily: T.fontBody, margin: 0 }}>{error}</p>}
+
+                <motion.button type="submit" disabled={submitting}
+                  whileHover={!submitting ? { scale: 1.02 } : {}} whileTap={!submitting ? { scale: 0.97 } : {}}
+                  style={{
+                    width: "100%", marginTop: 4, padding: "13px", borderRadius: 999, border: "none",
+                    background: T.green, color: T.goldLight, cursor: submitting ? "not-allowed" : "pointer",
+                    fontFamily: T.fontBody, fontSize: 14, fontWeight: 700, letterSpacing: "0.04em",
+                    opacity: submitting ? 0.7 : 1,
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  }}>
+                  {submitting && <Spinner size={14} color={T.goldLight} />}
+                  {submitting ? "Processing…" : "Continue to Payment"}
+                </motion.button>
+              </form>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 };
 
@@ -890,6 +1004,15 @@ const SectionProducts = ({ user }) => {
   const [qty, setQty]           = useState(1);
   const [buying, setBuying]     = useState(false);
   const [buyError, setBuyError] = useState("");
+  const [shippingOpen, setShippingOpen] = useState(false);
+  const [shippingAddress, setShippingAddress] = useState(() => {
+    try {
+      const stored = localStorage.getItem("tn_shipping_address");
+      return stored ? JSON.parse(stored) : { fullName: "", phone: "", address: "", city: "", state: "" };
+    } catch {
+      return { fullName: "", phone: "", address: "", city: "", state: "" };
+    }
+  });
 
   useEffect(() => {
     api.get("/products")
@@ -909,8 +1032,19 @@ const SectionProducts = ({ user }) => {
   };
   const closeProduct = () => { if (!buying) setSelected(null); };
 
+  const handleConfirmShipping = (address) => {
+    try {
+      localStorage.setItem("tn_shipping_address", JSON.stringify(address));
+    } catch {
+      // non-fatal
+    }
+    setShippingAddress(address);
+    setShippingOpen(false);
+    handleBuyNow(selected, address);
+  };
+
   // Same proven flow as the /products page: POST /orders → POST /orders/pay → redirect
-  const handleBuyNow = async (product) => {
+  const handleBuyNow = async (product, address) => {
     if (!user?.email) {
       setBuyError("Could not find your email. Please re-login.");
       return;
@@ -929,6 +1063,7 @@ const SectionProducts = ({ user }) => {
           image: product.image,
         }],
         totalPrice,
+        shippingAddress: address,
       });
 
       const orderId = order._id;
@@ -1116,7 +1251,7 @@ const SectionProducts = ({ user }) => {
 
                   <motion.button whileHover={!buying ? { scale: 1.02 } : {}} whileTap={!buying ? { scale: 0.97 } : {}}
                     disabled={buying}
-                    onClick={() => handleBuyNow(selected)}
+                    onClick={() => setShippingOpen(true)}
                     style={{
                       width: "100%", padding: "12px", borderRadius: 12, border: "none",
                       background: T.green, color: T.goldLight, cursor: buying ? "not-allowed" : "pointer",
@@ -1133,6 +1268,14 @@ const SectionProducts = ({ user }) => {
           </>
         )}
       </AnimatePresence>
+
+      <ShippingModal
+        open={shippingOpen}
+        onClose={() => setShippingOpen(false)}
+        initialAddress={shippingAddress}
+        onConfirm={handleConfirmShipping}
+        submitting={buying}
+      />
     </div>
   );
 };

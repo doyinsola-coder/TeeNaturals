@@ -866,6 +866,99 @@ const CartSidebar = ({
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SHIPPING ADDRESS MODAL — collected once before checkout, saved for next time
+// ─────────────────────────────────────────────────────────────────────────────
+const ShippingAddressModal = ({ open, onClose, initialAddress, onConfirm, submitting }) => {
+  const [form, setForm] = useState(initialAddress);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (open) { setForm(initialAddress); setError(""); }
+  }, [open, initialAddress]);
+
+  if (!open) return null;
+
+  const set = (key) => (e) => setForm(f => ({ ...f, [key]: e.target.value }));
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!form.fullName.trim() || !form.phone.trim() || !form.address.trim() || !form.city.trim() || !form.state.trim()) {
+      setError("Please fill in every field so we know where to deliver your order.");
+      return;
+    }
+    setError("");
+    onConfirm(form);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={submitting ? undefined : onClose}
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4"
+    >
+      <motion.div
+        onClick={(e) => e.stopPropagation()}
+        initial={{ opacity: 0, scale: 0.94, y: 18 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.96, y: 12 }}
+        transition={{ type: "spring", stiffness: 340, damping: 28 }}
+        className="bg-white rounded-3xl w-full max-w-md overflow-hidden"
+        style={{ boxShadow: "0 30px 80px rgba(0,0,0,0.35)" }}
+      >
+        <div className="bg-[#1a3a2e] px-6 py-5 flex items-center justify-between">
+          <div>
+            <h2 style={{ fontFamily: T.fontDisplay }} className="text-xl font-bold text-white">
+              Delivery Details
+            </h2>
+            <p className="text-white/60 text-xs mt-0.5">Where should we send your order?</p>
+          </div>
+          {!submitting && (
+            <button onClick={onClose} className="text-white/70 hover:text-white p-1" aria-label="Close">
+              <FaTimes />
+            </button>
+          )}
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-3">
+          <input value={form.fullName} onChange={set("fullName")} placeholder="Full name"
+            disabled={submitting}
+            className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:border-[#d4af37] focus:outline-none text-sm disabled:opacity-60" />
+          <input value={form.phone} onChange={set("phone")} placeholder="Phone number" type="tel"
+            disabled={submitting}
+            className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:border-[#d4af37] focus:outline-none text-sm disabled:opacity-60" />
+          <input value={form.address} onChange={set("address")} placeholder="Street address"
+            disabled={submitting}
+            className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:border-[#d4af37] focus:outline-none text-sm disabled:opacity-60" />
+          <div className="grid grid-cols-2 gap-3">
+            <input value={form.city} onChange={set("city")} placeholder="City"
+              disabled={submitting}
+              className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:border-[#d4af37] focus:outline-none text-sm disabled:opacity-60" />
+            <input value={form.state} onChange={set("state")} placeholder="State"
+              disabled={submitting}
+              className="w-full px-4 py-3 rounded-xl border border-stone-200 focus:border-[#d4af37] focus:outline-none text-sm disabled:opacity-60" />
+          </div>
+
+          {error && <p className="text-red-500 text-xs">{error}</p>}
+
+          <motion.button
+            type="submit"
+            disabled={submitting}
+            whileHover={!submitting ? { scale: 1.02 } : {}}
+            whileTap={!submitting ? { scale: 0.97 } : {}}
+            className="w-full mt-2 bg-[#1a3a2e] text-white py-3.5 rounded-full font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-60"
+          >
+            {submitting && <FaSpinner className="animate-spin" />}
+            {submitting ? "Processing…" : "Continue to Payment"}
+          </motion.button>
+        </form>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // MAIN PAGE COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 const TeeNaturalProducts = () => {
@@ -880,7 +973,14 @@ const TeeNaturalProducts = () => {
   // ── UI state
   const [cartOpen,         setCartOpen]         = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("ALL");
-  const [wishlist,         setWishlist]          = useState([]);
+  const [wishlist,         setWishlist]          = useState(() => {
+    try {
+      const stored = localStorage.getItem("tn_wishlist");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
   const [searchQuery,      setSearchQuery]       = useState("");
   const [prevCartCount,    setPrevCartCount]     = useState(0);
   const [selectedProduct,  setSelectedProduct]   = useState(null);
@@ -888,6 +988,15 @@ const TeeNaturalProducts = () => {
   // ── Checkout state
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutError, setCheckoutError] = useState(null);
+  const [shippingModalOpen, setShippingModalOpen] = useState(false);
+  const [shippingAddress, setShippingAddress] = useState(() => {
+    try {
+      const stored = localStorage.getItem("tn_shipping_address");
+      return stored ? JSON.parse(stored) : { fullName: "", phone: "", address: "", city: "", state: "" };
+    } catch {
+      return { fullName: "", phone: "", address: "", city: "", state: "" };
+    }
+  });
 
   // ── Derived values
   const totalCartQty = cartItems.reduce((s, i) => s + i.quantity, 0);
@@ -917,6 +1026,15 @@ const TeeNaturalProducts = () => {
   }, []);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
+
+  // Persist wishlist across page refreshes/sessions (per-browser)
+  useEffect(() => {
+    try {
+      localStorage.setItem("tn_wishlist", JSON.stringify(wishlist));
+    } catch {
+      // localStorage unavailable (private browsing, quota, etc.) — non-fatal
+    }
+  }, [wishlist]);
 
   // ── Cart action handlers (all keyed on _id)
   const getQuantity = (_id) => cartItems.find(i => i._id === _id)?.quantity ?? 0;
@@ -957,8 +1075,20 @@ const TeeNaturalProducts = () => {
   const handleCardClick = (product) => setSelectedProduct(product);
   const handleCloseModal = () => setSelectedProduct(null);
 
+  // ── Shipping address: save + proceed to real checkout
+  const handleConfirmShipping = (address) => {
+    try {
+      localStorage.setItem("tn_shipping_address", JSON.stringify(address));
+    } catch {
+      // non-fatal — just won't be prefilled next time
+    }
+    setShippingAddress(address);
+    setShippingModalOpen(false);
+    handleCheckout(address);
+  };
+
   // ── Checkout: POST /api/orders → POST /api/orders/pay → Paystack redirect
-  const handleCheckout = async () => {
+  const handleCheckout = async (address) => {
   if (cartItems.length === 0) return;
   setIsCheckingOut(true);
   setCheckoutError(null);
@@ -982,6 +1112,7 @@ const TeeNaturalProducts = () => {
           image: item.image,
         })),
         totalPrice: totalPrice, // Explicitly pass the total price
+        shippingAddress: address,
       },
       {
         headers: {
@@ -1245,7 +1376,7 @@ const { data: paystack } = await api.post(
             onDecrement={handleDecrement}
             onRemove={handleRemove}
             totalPrice={totalPrice}
-            onCheckout={handleCheckout}
+            onCheckout={() => setShippingModalOpen(true)}
             isCheckingOut={isCheckingOut}
           />
         )}
@@ -1262,6 +1393,19 @@ const { data: paystack } = await api.post(
             onIncrement={handleIncrement}
             onDecrement={handleDecrement}
             onPurchaseNow={handlePurchaseNow}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ══ SHIPPING ADDRESS MODAL ═══════════════════════════════════════════ */}
+      <AnimatePresence>
+        {shippingModalOpen && (
+          <ShippingAddressModal
+            open={shippingModalOpen}
+            onClose={() => setShippingModalOpen(false)}
+            initialAddress={shippingAddress}
+            onConfirm={handleConfirmShipping}
+            submitting={isCheckingOut}
           />
         )}
       </AnimatePresence>

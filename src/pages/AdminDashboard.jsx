@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import api from "../api/axios";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -62,6 +63,29 @@ const fmtMoney = n =>
 const fmtDate = d =>
   d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—";
 const shortId = (id = "") => `#${String(id).slice(-7).toUpperCase()}`;
+
+// Builds a 6-month revenue series (paid orders only) for the overview chart,
+// filling in ₦0 for months with no paid orders so the trend line stays continuous.
+const buildMonthlyRevenue = (orders) => {
+  const months = [];
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({
+      key: `${d.getFullYear()}-${d.getMonth()}`,
+      label: d.toLocaleDateString("en-GB", { month: "short" }),
+      revenue: 0,
+    });
+  }
+  (orders || []).forEach(o => {
+    if (!o.isPaid || !o.createdAt) return;
+    const d = new Date(o.createdAt);
+    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    const bucket = months.find(m => m.key === key);
+    if (bucket) bucket.revenue += o.totalPrice || 0;
+  });
+  return months;
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MICRO COMPONENTS
@@ -423,6 +447,59 @@ const StatCard = ({ icon, label, value, sub, accent, delay=0 }) => (
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
+// REVENUE CHART
+// ─────────────────────────────────────────────────────────────────────────────
+const RevenueChart = ({ orders }) => {
+  const data = buildMonthlyRevenue(orders);
+  const hasAnyRevenue = data.some(d => d.revenue > 0);
+
+  return (
+    <motion.div initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay:0.24}}
+      style={{ background:T.surface, borderRadius:18, border:`1px solid ${T.border}`,
+        boxShadow:T.shadow, overflow:"hidden" }}>
+      <div style={{ padding:"18px 22px 6px" }}>
+        <h3 style={{ fontFamily:T.fontDisplay, fontSize:16, fontWeight:700, color:T.textPri, margin:0 }}>
+          Revenue — Last 6 Months
+        </h3>
+      </div>
+      {!hasAnyRevenue ? (
+        <div style={{ padding:"40px 22px 30px" }}>
+          <EmptyState icon="📈" title="No revenue yet" sub="Paid orders will chart here as they come in." />
+        </div>
+      ) : (
+        <div style={{ padding:"8px 12px 16px", height:240 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={data} margin={{ top:8, right:16, left:0, bottom:0 }}>
+              <defs>
+                <linearGradient id="revenueFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={T.gold} stopOpacity={0.35} />
+                  <stop offset="100%" stopColor={T.gold} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
+              <XAxis dataKey="label" stroke={T.textMut} fontSize={12}
+                tickLine={false} axisLine={{ stroke:"rgba(255,255,255,0.08)" }} />
+              <YAxis stroke={T.textMut} fontSize={11} tickLine={false} axisLine={false}
+                tickFormatter={v => v >= 1000 ? `₦${(v/1000).toFixed(0)}k` : `₦${v}`} width={52} />
+              <Tooltip
+                formatter={(v) => [fmtMoney(v), "Revenue"]}
+                contentStyle={{ background:T.surfaceEl, border:`1px solid ${T.border}`,
+                  borderRadius:10, fontFamily:T.fontBody, fontSize:12, color:T.textPri }}
+                labelStyle={{ color:T.textSec, marginBottom:4 }}
+                cursor={{ stroke: T.gold, strokeWidth: 1, strokeDasharray: "3 3" }}
+              />
+              <Area type="monotone" dataKey="revenue" stroke={T.gold} strokeWidth={2.5}
+                fill="url(#revenueFill)" dot={{ r:3, fill:T.gold, strokeWidth:0 }}
+                activeDot={{ r:5, fill:T.gold }} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // SECTION: OVERVIEW
 // ─────────────────────────────────────────────────────────────────────────────
 const SectionOverview = ({ stats, orders, setActive }) => {
@@ -437,6 +514,9 @@ const SectionOverview = ({ stats, orders, setActive }) => {
         <StatCard icon="💰" label="Total Revenue"  value={fmtMoney(stats.revenue)} sub="From paid orders" delay={0.16} accent="rgba(35,134,54,0.15)" />
         <StatCard icon="🌿" label="Products"       value={stats.products} sub="In catalogue"        delay={0.22} accent="rgba(61,122,96,0.2)" />
       </div>
+
+      {/* Revenue trend */}
+      <RevenueChart orders={orders} />
 
       {/* Recent orders table */}
       <motion.div initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay:0.3}}
@@ -783,6 +863,7 @@ const SectionOrders = ({ toast }) => {
   const [filter,  setFilter]  = useState("all");
   const [search,  setSearch]  = useState("");
   const [saving,  setSaving]  = useState({});
+  const [addressOrder, setAddressOrder] = useState(null);
 
   const load = useCallback(()=>{
     setLoading(true);
@@ -885,6 +966,8 @@ const SectionOrders = ({ toast }) => {
                         </Btn>
                       )}
                       {o.isDelivered && <span style={{ fontSize:12,color:"#4cc26a" }}>✓ Delivered</span>}
+                      {" "}
+                      <Btn size="sm" variant="ghost" onClick={()=>setAddressOrder(o)}>📍 Address</Btn>
                     </td>
                   </motion.tr>
                 ))}
@@ -893,6 +976,30 @@ const SectionOrders = ({ toast }) => {
           </div>
         )}
       </motion.div>
+
+      <Modal open={!!addressOrder} onClose={()=>setAddressOrder(null)} title="Shipping Address" width={420}>
+        {addressOrder?.shippingAddress ? (
+          <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+            {[
+              { label:"Recipient", value:addressOrder.shippingAddress.fullName },
+              { label:"Phone",     value:addressOrder.shippingAddress.phone },
+              { label:"Address",   value:addressOrder.shippingAddress.address },
+              { label:"City",      value:addressOrder.shippingAddress.city },
+              { label:"State",     value:addressOrder.shippingAddress.state },
+            ].map((r,i)=>(
+              <div key={i}>
+                <div style={{ fontFamily:T.fontBody, fontSize:11, fontWeight:700, textTransform:"uppercase",
+                  letterSpacing:"0.07em", color:T.textMut, marginBottom:2 }}>{r.label}</div>
+                <div style={{ fontFamily:T.fontBody, fontSize:14, color:T.textPri }}>{r.value || "—"}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p style={{ fontFamily:T.fontBody, fontSize:13, color:T.textSec }}>
+            No address on file for this order — it was likely placed before delivery details were required.
+          </p>
+        )}
+      </Modal>
     </div>
   );
 };
