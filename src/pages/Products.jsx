@@ -385,11 +385,12 @@ const ProductModal = ({
           </button>
 
           {/* Image — full picture visible (object-contain), not cropped */}
-          <div className="relative w-full sm:w-2/5 h-64 sm:h-auto shrink-0 bg-stone-100 flex items-center justify-center p-4 sm:p-5">
+          <div className="relative w-full sm:w-2/5 h-[420px] sm:h-auto shrink-0 bg-stone-100 flex items-center justify-center p-1.5 sm:p-5">
             <img
               src={product.image}
               alt={product.name}
-              className="max-w-full max-h-full w-auto h-auto object-contain"
+              className="max-w-full max-h-full w-auto h-auto object-contain rounded-xl sm:rounded-none"
+              style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}
             />
             <div className="absolute top-3 left-3">
               <span

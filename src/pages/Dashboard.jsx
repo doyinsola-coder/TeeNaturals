@@ -1081,12 +1081,12 @@ const SectionProducts = ({ user }) => {
                 <div style={{ padding: 24 }}>
                   {selected.image && (
                     <div style={{
-                      width: "100%", height: 200, borderRadius: 14, marginBottom: 16,
+                      width: "100%", height: 320, borderRadius: 14, marginBottom: 16,
                       background: T.faint, display: "flex", alignItems: "center", justifyContent: "center",
-                      overflow: "hidden", padding: 10,
+                      overflow: "hidden", padding: 6,
                     }}>
                       <img src={selected.image} alt={selected.name}
-                        style={{ maxWidth: "100%", maxHeight: "100%", width: "auto", height: "auto", objectFit: "contain" }} />
+                        style={{ maxWidth: "100%", maxHeight: "100%", width: "auto", height: "auto", objectFit: "contain", borderRadius: 10, boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }} />
                     </div>
                   )}
                   {selected.description && (
