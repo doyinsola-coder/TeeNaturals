@@ -1,10 +1,7 @@
-
-
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaBars, FaTimes, FaShoppingBag, FaLeaf } from "react-icons/fa";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useCart } from "../context/CartContext";
 import axios from "axios";
 import api from "../api/axios";
 
@@ -215,18 +212,15 @@ const ChevronSvg = ({ open }) => (
 const UserDropdown = ({ profile, onLogout }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
 
   useEffect(() => { setOpen(false); }, [location.pathname]);
+
+  // Close dropdown on outside click
   useEffect(() => {
-    const handleScroll = () => { setScrolled(window.scrollY > 20);
-      setScrolled(window.scrollY > 20);
     const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener("mousedown", h);
-     };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => document.removeEventListener("mousedown", h);
   }, []);
 
   const firstName = profile?.name?.split(" ")[0] || "Account";
@@ -429,7 +423,10 @@ const AdminDropdown = ({ profile, onLogout }) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // MOBILE DRAWER PANEL (guest + user share the same drawer)
 // ─────────────────────────────────────────────────────────────────────────────
-const MobileDrawer = ({ open, onClose, profile, onLogout, cartCount }) => (
+const MobileDrawer = ({ open, onClose, profile, onLogout }) => {
+  const location = useLocation();
+
+  return (
   <AnimatePresence>
     {open && (
       <>
@@ -550,11 +547,6 @@ const MobileDrawer = ({ open, onClose, profile, onLogout, cartCount }) => (
                     -translate-x-full group-hover:translate-x-full transition-transform duration-500 pointer-events-none" />
                   <FaShoppingBag className="text-sm relative z-10" />
                   <span className="relative z-10">Shop Now</span>
-                  {cartCount > 0 && (
-                    <span className="relative z-10 bg-[#1a3a2e] text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                      {cartCount} in cart
-                    </span>
-                  )}
                 </Link>
                 <Link to="/dashboard" onClick={onClose}
                   className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl
@@ -576,7 +568,8 @@ const MobileDrawer = ({ open, onClose, profile, onLogout, cartCount }) => (
       </>
     )}
   </AnimatePresence>
-);
+  );
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ADMIN MOBILE DRAWER — dark, gold accents, admin links only
@@ -684,8 +677,6 @@ const AdminMobileDrawer = ({ open, onClose, profile, onLogout }) => {
 const TeeNaturalNavbar = () => {
   const navigate  = useNavigate();
   const location  = useLocation();
-  const { state } = useCart();
-  const cartCount = state.cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
   const [profile,  setProfile]  = useState(null);
   const [loading,  setLoading]  = useState(true);
@@ -895,12 +886,6 @@ const TeeNaturalNavbar = () => {
                       text-sm flex items-center gap-2 shadow-lg whitespace-nowrap">
                     <FaShoppingBag className="text-xs" />
                     Shop Now
-                    {cartCount > 0 && (
-                      <span className="bg-[#1a3a2e] text-white text-[10px] font-bold
-                        w-5 h-5 rounded-full flex items-center justify-center">
-                        {cartCount}
-                      </span>
-                    )}
                   </motion.button>
                 </Link>
 
@@ -910,15 +895,6 @@ const TeeNaturalNavbar = () => {
                     className="relative w-9 h-9 bg-[#d4af37] rounded-full
                       flex items-center justify-center shadow-md">
                     <FaShoppingBag className="text-[#1a3a2e] text-sm" />
-                    <AnimatePresence>
-                      {cartCount > 0 && (
-                        <motion.span key={cartCount} initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                          className="absolute -top-1 -right-1 bg-[#1a3a2e] text-white text-[9px]
-                            font-bold w-[18px] h-[18px] rounded-full flex items-center justify-center">
-                          {cartCount}
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
                   </motion.div>
                 </Link>
 
@@ -949,12 +925,6 @@ const TeeNaturalNavbar = () => {
                       text-sm flex items-center gap-2 shadow-lg whitespace-nowrap">
                     <FaShoppingBag className="text-xs" />
                     Shop Now
-                    {cartCount > 0 && (
-                      <span className="bg-[#1a3a2e] text-white text-[10px] font-bold
-                        w-5 h-5 rounded-full flex items-center justify-center">
-                        {cartCount}
-                      </span>
-                    )}
                   </motion.button>
                 </Link>
 
@@ -964,15 +934,6 @@ const TeeNaturalNavbar = () => {
                     className="relative w-9 h-9 bg-[#d4af37] rounded-full
                       flex items-center justify-center shadow-md">
                     <FaShoppingBag className="text-[#1a3a2e] text-sm" />
-                    <AnimatePresence>
-                      {cartCount > 0 && (
-                        <motion.span key={cartCount} initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                          className="absolute -top-1 -right-1 bg-[#1a3a2e] text-white text-[9px]
-                            font-bold w-[18px] h-[18px] rounded-full flex items-center justify-center">
-                          {cartCount}
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
                   </motion.div>
                 </Link>
               </>
@@ -1007,7 +968,6 @@ const TeeNaturalNavbar = () => {
         open={menuOpen} onClose={() => setMenuOpen(false)}
         profile={isUser ? profile : null}
         onLogout={handleLogout}
-        cartCount={cartCount}
       />
     </>
   );
