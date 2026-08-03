@@ -105,6 +105,7 @@ const Badge = ({ label, type = "default" }) => {
     shipped:     { bg: T.goldPale,bd: T.goldBorder,color: T.gold },
     delivered:   { bg: T.greenBg, bd: T.greenBd, color: "#4cc26a" },
     cancelled:   { bg: T.redBg,   bd: T.redBd,   color: T.red },
+    suspended:   { bg: T.redBg,   bd: T.redBd,   color: T.red },
     admin:       { bg: T.goldPale,bd: T.goldBorder,color: T.gold },
     user:        { bg: "rgba(139,148,158,0.1)", bd: "rgba(139,148,158,0.2)", color: T.textSec },
     default:     { bg: "rgba(139,148,158,0.1)", bd: "rgba(139,148,158,0.2)", color: T.textSec },
@@ -1007,24 +1008,67 @@ const SectionOrders = ({ toast }) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // SECTION: USERS
 // ─────────────────────────────────────────────────────────────────────────────
-const SectionUsers = ({ toast }) => {
+const SectionUsers = ({ toast, profile }) => {
   const [users,   setUsers]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [search,  setSearch]  = useState("");
   const [filter,  setFilter]  = useState("all");
+  const [acting,  setActing]  = useState({});   // per-user id: "suspend" | "unsuspend" | null
+  const [delTarget, setDelTarget] = useState(null);
 
-  useEffect(()=>{
+  const load = useCallback(() => {
+    setLoading(true);
     api.get("/admin/users")
       .then(r=>setUsers(Array.isArray(r.data)?r.data:r.data?.users||[]))
       .catch(()=>toast("Failed to load users","error"))
       .finally(()=>setLoading(false));
-  },[toast]);
+  }, [toast]);
+
+  useEffect(()=>{ load(); },[load]);
 
   const filtered = users
-    .filter(u=> filter==="all" ? true : u.role===filter)
+    .filter(u=> filter==="all" ? true : filter==="suspended" ? u.isSuspended : u.role===filter)
     .filter(u=> !search
       || u.name?.toLowerCase().includes(search.toLowerCase())
       || u.email?.toLowerCase().includes(search.toLowerCase()));
+
+  const handleSuspend = async (u) => {
+    setActing(a=>({...a,[u._id]:"suspend"}));
+    try {
+      await api.put(`/admin/users/${u._id}/suspend`);
+      toast(`${u.name} suspended`,"success");
+      load();
+    } catch (e) {
+      toast(e.response?.data?.message||"Failed to suspend user","error");
+    } finally {
+      setActing(a=>({...a,[u._id]:null}));
+    }
+  };
+
+  const handleUnsuspend = async (u) => {
+    setActing(a=>({...a,[u._id]:"unsuspend"}));
+    try {
+      await api.put(`/admin/users/${u._id}/unsuspend`);
+      toast(`${u.name} unsuspended`,"success");
+      load();
+    } catch (e) {
+      toast(e.response?.data?.message||"Failed to unsuspend user","error");
+    } finally {
+      setActing(a=>({...a,[u._id]:null}));
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await api.delete(`/admin/users/${delTarget._id}`);
+      toast(`${delTarget.name} deleted`,"success");
+      setDelTarget(null);
+      load();
+    } catch (e) {
+      toast(e.response?.data?.message||"Failed to delete user","error");
+      setDelTarget(null);
+    }
+  };
 
   return (
     <div style={{ display:"flex",flexDirection:"column",gap:18 }}>
@@ -1046,7 +1090,7 @@ const SectionUsers = ({ toast }) => {
           </div>
           <div style={{ display:"flex",gap:5,background:T.surfaceEl,
             borderRadius:11,padding:4,border:`1px solid ${T.border}` }}>
-            {[["all","All"],["admin","Admins"],["user","Users"]].map(([v,l])=>(
+            {[["all","All"],["admin","Admins"],["user","Users"],["suspended","Suspended"]].map(([v,l])=>(
               <motion.button key={v} whileTap={{scale:0.96}} onClick={()=>setFilter(v)}
                 style={{ padding:"5px 13px",borderRadius:8,cursor:"pointer",
                   fontFamily:T.fontBody,fontSize:12,fontWeight:700,
@@ -1070,10 +1114,12 @@ const SectionUsers = ({ toast }) => {
           <div style={{ overflowX:"auto" }}>
             <table className="tn-tbl">
               <thead><tr>
-                <th>User</th><th>Email</th><th>Role</th><th>Joined</th><th>ID</th>
+                <th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Joined</th><th style={{textAlign:"right"}}>Actions</th>
               </tr></thead>
               <tbody>
-                {filtered.map((u,i)=>(
+                {filtered.map((u,i)=>{
+                  const isSelf = profile && u._id === profile._id;
+                  return (
                   <motion.tr key={u._id} initial={{opacity:0,y:6}} animate={{opacity:1,y:0}}
                     transition={{delay:i*0.025}}>
                     <td>
@@ -1087,20 +1133,41 @@ const SectionUsers = ({ toast }) => {
                           color: u.role==="admin"?T.green:T.goldLight }}>
                           {u.name?.[0]?.toUpperCase()||"?"}
                         </div>
-                        <span style={{ fontWeight:700 }}>{u.name||"Unknown"}</span>
+                        <span style={{ fontWeight:700 }}>{u.name||"Unknown"}{isSelf && <span style={{color:T.textMut,fontWeight:500}}> (you)</span>}</span>
                       </div>
                     </td>
                     <td style={{ color:T.textSec,fontSize:12 }}>{u.email}</td>
                     <td><Badge label={u.role||"user"} /></td>
+                    <td>{u.isSuspended ? <Badge label="Suspended" /> : <span style={{fontSize:12,color:"#4cc26a"}}>Active</span>}</td>
                     <td style={{ color:T.textSec,fontSize:12 }}>{fmtDate(u.createdAt)}</td>
-                    <td><span style={{ fontFamily:T.fontMono,fontSize:11,color:T.textMut }}>{shortId(u._id)}</span></td>
+                    <td>
+                      {isSelf ? (
+                        <span style={{ fontSize:11,color:T.textMut }}>—</span>
+                      ) : (
+                        <div style={{ display:"flex",gap:8,justifyContent:"flex-end" }}>
+                          {u.isSuspended ? (
+                            <Btn size="sm" variant="secondary" loading={acting[u._id]==="unsuspend"}
+                              onClick={()=>handleUnsuspend(u)}>Unsuspend</Btn>
+                          ) : (
+                            <Btn size="sm" variant="secondary" loading={acting[u._id]==="suspend"}
+                              onClick={()=>handleSuspend(u)}>Suspend</Btn>
+                          )}
+                          <Btn size="sm" danger onClick={()=>setDelTarget(u)}>Delete</Btn>
+                        </div>
+                      )}
+                    </td>
                   </motion.tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
       </motion.div>
+
+      <Confirm open={!!delTarget} title="Delete User"
+        sub={`This permanently deletes ${delTarget?.name || "this user"}'s account. Their past orders and reviews will remain but will no longer be linked to an active account. This cannot be undone.`}
+        onConfirm={handleDelete} onCancel={()=>setDelTarget(null)} />
     </div>
   );
 };
@@ -1297,7 +1364,7 @@ const AdminDashboard = () => {
       case "overview":  return <SectionOverview stats={stats} orders={orders} setActive={setActive} />;
       case "products":  return <SectionProducts toast={toast} />;
       case "orders":    return <SectionOrders toast={toast} />;
-      case "users":     return <SectionUsers toast={toast} />;
+      case "users":     return <SectionUsers toast={toast} profile={profile} />;
       case "settings":  return <SectionSettings profile={profile} />;
       default:          return null;
     }
