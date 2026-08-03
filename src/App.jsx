@@ -1,5 +1,7 @@
 import React from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router'
+import { ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 import './App.css'
 import Home from './pages/Home'
 import Footer from './components/Footer'
@@ -31,6 +33,7 @@ function App() {
   return (
     <BrowserRouter>
      <ScrollToTop />
+      <ToastContainer position="top-right" autoClose={4000} newestOnTop />
       <Routes>
 
         {/* Routes with Navbar and Footer */}

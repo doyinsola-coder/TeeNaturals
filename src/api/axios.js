@@ -33,7 +33,12 @@ api.interceptors.response.use(
       localStorage.removeItem("tn_user");
 
       if (window.location.pathname !== "/login") {
-        window.location.href = "/login";
+        // Give the toast a moment to actually render before the page
+        // unloads — an immediate redirect can wipe it out before it
+        // ever becomes visible.
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 1800);
       }
     }
 
