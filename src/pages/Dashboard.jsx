@@ -1080,8 +1080,14 @@ const SectionProducts = ({ user }) => {
 
                 <div style={{ padding: 24 }}>
                   {selected.image && (
-                    <img src={selected.image} alt={selected.name}
-                      style={{ width: "100%", height: 180, objectFit: "cover", borderRadius: 14, marginBottom: 16 }} />
+                    <div style={{
+                      width: "100%", height: 200, borderRadius: 14, marginBottom: 16,
+                      background: T.faint, display: "flex", alignItems: "center", justifyContent: "center",
+                      overflow: "hidden", padding: 10,
+                    }}>
+                      <img src={selected.image} alt={selected.name}
+                        style={{ maxWidth: "100%", maxHeight: "100%", width: "auto", height: "auto", objectFit: "contain" }} />
+                    </div>
                   )}
                   {selected.description && (
                     <p style={{ fontFamily: T.fontBody, fontSize: 13, color: T.textSec, lineHeight: 1.6, marginBottom: 16 }}>
