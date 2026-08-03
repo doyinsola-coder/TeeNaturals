@@ -21,7 +21,7 @@ const quickLinks = [
   { name: 'Our Products',  href: '/products' },
   { name: 'Sustainability',href: '/sustainability' },
   { name: 'Consultation',  href: '/consultation' },
-  { name: 'Spa Bookings',  href: '/spa' },
+  { name: 'Spa Bookings',  href: '/spa-bookings' },
 ];
 
 const shopLinks = [

@@ -10,7 +10,7 @@
  * ✅ WhatsApp kept as fallback
  * ✅ Skeleton loaders + error/retry state
  * ✅ Checkout error toast (non-blocking)
- * ✅ Product detail modal on card click (full description view)
+ * ✅ Product detail modal on card click (full description + full image view)
  * ✅ All animations, UI, filters, search, wishlist 100% preserved
  *
  * Dependencies: framer-motion, react-icons/fa, axios
@@ -331,7 +331,7 @@ const LazyImage = ({ src, alt, className }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PRODUCT DETAIL MODAL — shows full description on card click
+// PRODUCT DETAIL MODAL — shows full description + full (uncropped) image on card click
 // ─────────────────────────────────────────────────────────────────────────────
 const ProductModal = ({
   product,
@@ -384,12 +384,12 @@ const ProductModal = ({
             <FaTimes className="text-[#1a3a2e] text-sm" />
           </button>
 
-          {/* Image */}
-          <div className="relative w-full sm:w-2/5 h-56 sm:h-auto shrink-0 bg-stone-100">
+          {/* Image — full picture visible (object-contain), not cropped */}
+          <div className="relative w-full sm:w-2/5 h-64 sm:h-auto shrink-0 bg-stone-100 flex items-center justify-center p-4 sm:p-5">
             <img
               src={product.image}
               alt={product.name}
-              className="w-full h-full object-cover"
+              className="max-w-full max-h-full w-auto h-auto object-contain"
             />
             <div className="absolute top-3 left-3">
               <span
