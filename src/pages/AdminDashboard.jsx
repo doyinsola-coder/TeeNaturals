@@ -851,10 +851,10 @@ console.log("Selected file:", file);
 // SECTION: ORDERS
 // ─────────────────────────────────────────────────────────────────────────────
 const ORDER_STATUSES = [
-  { value:"Processing", label:"Processing" },
-  { value:"Shipped",    label:"Shipped"    },
-  { value:"Delivered",  label:"Delivered"  },
-  { value:"Cancelled",  label:"Cancelled"  },
+  { value:"processing", label:"Processing" },
+  { value:"shipped",    label:"Shipped"    },
+  { value:"delivered",  label:"Delivered"  },
+  { value:"cancelled",  label:"Cancelled"  },
 ];
 
 const SectionOrders = ({ toast }) => {
@@ -949,7 +949,7 @@ const SectionOrders = ({ toast }) => {
                     <td><span style={{ fontWeight:700 }}>{fmtMoney(o.totalPrice)}</span></td>
                     <td><Badge label={o.isPaid?"Paid":"pending"} /></td>
                     <td>
-                      <select value={o.status||o.orderStatus||"Processing"}
+                      <select value={o.status||o.orderStatus||"processing"}
                         onChange={e=>updateStatus(o._id,{status:e.target.value,orderStatus:e.target.value},"status updated")}
                         disabled={saving[o._id]}
                         style={{ padding:"5px 10px",borderRadius:8,border:`1px solid ${T.border}`,
@@ -961,7 +961,7 @@ const SectionOrders = ({ toast }) => {
                     <td>
                       {!o.isDelivered && (
                         <Btn size="sm" variant="secondary" loading={saving[o._id]}
-                          onClick={()=>updateStatus(o._id,{isDelivered:true,deliveredAt:new Date().toISOString(),status:"Delivered",orderStatus:"Delivered"},"marked delivered")}>
+                          onClick={()=>updateStatus(o._id,{isDelivered:true,deliveredAt:new Date().toISOString(),status:"delivered",orderStatus:"delivered"},"marked delivered")}>
                           ✓ Deliver
                         </Btn>
                       )}

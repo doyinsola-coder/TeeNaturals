@@ -66,6 +66,41 @@ const ReviewsPage = () => {
     }
   };
 
+  // ── Editing an existing review ──────────────────────────────────────────
+  const [editingId, setEditingId]   = useState(null);
+  const [editRating, setEditRating] = useState(0);
+  const [editComment, setEditComment] = useState("");
+  const [editHover, setEditHover]   = useState(0);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError]   = useState("");
+
+  const startEdit = (review) => {
+    setEditingId(review._id);
+    setEditRating(review.rating);
+    setEditComment(review.comment);
+    setEditError("");
+  };
+  const cancelEdit = () => setEditingId(null);
+
+  const saveEdit = async (id) => {
+    if (editRating === 0) return setEditError("Please select a star rating.");
+    if (!editComment.trim()) return setEditError("Please write a short review.");
+    setEditSaving(true);
+    setEditError("");
+    try {
+      const { data: updated } = await api.put(`/reviews/${id}`, {
+        rating: editRating,
+        comment: editComment.trim(),
+      });
+      setReviews(prev => prev.map(r => r._id === id ? updated : r));
+      setEditingId(null);
+    } catch (err) {
+      setEditError(err?.response?.data?.message || err?.message || "Couldn't save changes.");
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   const handleDeleteReview = async (id) => {
     try {
       await api.delete(`/reviews/${id}`);
@@ -350,13 +385,22 @@ const ReviewsPage = () => {
                             </div>
                           </div>
                           {canDelete && (
-                            <button
-                              onClick={() => handleDeleteReview(review._id)}
-                              aria-label="Delete review"
-                              className="text-white/50 hover:text-red-300 transition-colors p-1"
-                            >
-                              <FaTrash className="text-sm" />
-                            </button>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => startEdit(review)}
+                                aria-label="Edit review"
+                                className="text-white/50 hover:text-[#d4af37] transition-colors p-1 text-xs font-semibold"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeleteReview(review._id)}
+                                aria-label="Delete review"
+                                className="text-white/50 hover:text-red-300 transition-colors p-1"
+                              >
+                                <FaTrash className="text-sm" />
+                              </button>
+                            </div>
                           )}
                         </div>
                         <div className="flex items-center justify-between text-sm text-white/80">
@@ -365,12 +409,57 @@ const ReviewsPage = () => {
                       </div>
 
                       {/* Review Content */}
-                      <div className="p-6">
-                        <FaQuoteLeft className="text-[#d4af37] text-2xl mb-4 opacity-50" />
-                        <p className="text-gray-700 leading-relaxed">
-                          {review.comment}
-                        </p>
-                      </div>
+                      {editingId === review._id ? (
+                        <div className="p-6">
+                          <div className="flex gap-1.5 mb-3">
+                            {[1, 2, 3, 4, 5].map(n => (
+                              <button
+                                key={n}
+                                type="button"
+                                onClick={() => setEditRating(n)}
+                                onMouseEnter={() => setEditHover(n)}
+                                onMouseLeave={() => setEditHover(0)}
+                                className="text-xl"
+                              >
+                                <FaStar className={(editHover || editRating) >= n ? "text-[#d4af37]" : "text-gray-200"} />
+                              </button>
+                            ))}
+                          </div>
+                          <textarea
+                            value={editComment}
+                            onChange={e => setEditComment(e.target.value)}
+                            rows={3}
+                            maxLength={1000}
+                            className="w-full p-3 rounded-xl border border-gray-200 focus:border-[#d4af37] focus:outline-none resize-none text-gray-700 text-sm"
+                          />
+                          {editError && <p className="text-red-500 text-xs mt-2">{editError}</p>}
+                          <div className="flex gap-2 mt-3">
+                            <motion.button
+                              whileHover={!editSaving ? { scale: 1.03 } : {}}
+                              whileTap={!editSaving ? { scale: 0.97 } : {}}
+                              disabled={editSaving}
+                              onClick={() => saveEdit(review._id)}
+                              className="flex-1 bg-[#1a3a2e] text-white py-2 rounded-full text-sm font-semibold disabled:opacity-60"
+                            >
+                              {editSaving ? "Saving…" : "Save"}
+                            </motion.button>
+                            <button
+                              onClick={cancelEdit}
+                              disabled={editSaving}
+                              className="px-4 py-2 rounded-full text-sm font-semibold text-gray-500 border border-gray-200"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-6">
+                          <FaQuoteLeft className="text-[#d4af37] text-2xl mb-4 opacity-50" />
+                          <p className="text-gray-700 leading-relaxed">
+                            {review.comment}
+                          </p>
+                        </div>
+                      )}
                     </motion.div>
                   );
                 })}

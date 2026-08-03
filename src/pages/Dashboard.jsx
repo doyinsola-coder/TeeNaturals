@@ -83,6 +83,30 @@ const Badge = ({ paid }) => (
   </span>
 );
 
+const STATUS_STYLES = {
+  pending:    { bg: "rgba(212,175,55,0.13)", color: "#92600a", dot: T.gold },
+  processing: { bg: "rgba(56,139,253,0.12)", color: "#1d5fc7", dot: "#388bfd" },
+  shipped:    { bg: "rgba(212,175,55,0.13)", color: "#92600a", dot: T.gold },
+  delivered:  { bg: "rgba(34,139,80,0.1)",   color: "#166534", dot: "#22c55e" },
+  cancelled:  { bg: "rgba(180,50,40,0.1)",   color: T.red,     dot: T.red },
+};
+
+const StatusBadge = ({ status }) => {
+  const key = (status || "processing").toLowerCase();
+  const s = STATUS_STYLES[key] || STATUS_STYLES.processing;
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 5,
+      padding: "3px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700,
+      letterSpacing: "0.04em", fontFamily: T.fontBody, textTransform: "capitalize",
+      background: s.bg, color: s.color,
+    }}>
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.dot }} />
+      {key}
+    </span>
+  );
+};
+
 const RoleBadge = ({ role }) => (
   <span style={{
     display: "inline-flex", alignItems: "center", gap: 4,
@@ -565,10 +589,12 @@ const SectionProfile = ({ user, loading }) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // SECTION: ORDERS
 // ─────────────────────────────────────────────────────────────────────────────
-const SectionOrders = ({ orders, loading }) => {
+const SectionOrders = ({ orders, loading, onRefresh }) => {
   const [filter, setFilter] = useState("all");
   const [detailId, setDetailId] = useState(null);
   const [delTarget, setDelTarget] = useState(null);
+  const [receiving, setReceiving] = useState(false);
+  const [receiveError, setReceiveError] = useState("");
   const navigate = useNavigate();
   const filtered = filter === "all" ? orders
     : filter === "paid" ? orders.filter(o => o.isPaid)
@@ -706,6 +732,20 @@ const openAdd = () => {
     }
   };
 
+  const handleMarkReceived = async (id) => {
+    setReceiving(true);
+    setReceiveError("");
+    try {
+      await api.put(`/orders/${id}/received`);
+      toast.success("Marked as received — thanks for confirming!");
+      onRefresh?.();
+    } catch (err) {
+      setReceiveError(err?.response?.data?.message || err?.message || "Couldn't update this order.");
+    } finally {
+      setReceiving(false);
+    }
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Header + filter */}
@@ -755,7 +795,8 @@ const openAdd = () => {
                   <th>Date</th>
                   <th>Items</th>
                   <th>Total</th>
-                  <th>Status</th>
+                  <th>Payment</th>
+                  <th>Order Status</th>
                   <th></th>
                 </tr>
               </thead>
@@ -769,10 +810,11 @@ const openAdd = () => {
                     <td style={{ color: T.muted }}>{o.orderItems?.length || 0} item{(o.orderItems?.length || 0) !== 1 ? "s" : ""}</td>
                     <td><span style={{ fontWeight: 700 }}>{fmt(o.totalPrice)}</span></td>
                     <td><Badge paid={o.isPaid} /></td>
+                    <td><StatusBadge status={o.status || o.orderStatus} /></td>
                     <td>
                       <div style={{ display:"flex",gap:8,justifyContent:"flex-end" }}>
                         <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-                        onClick={() => setDetailId(o._id)}
+                        onClick={() => { setDetailId(o._id); setReceiveError(""); }}
                         style={{
                           padding: "5px 12px", borderRadius: 8, border: `1px solid ${T.borderMid}`,
                           background: "transparent", cursor: "pointer", fontFamily: T.fontBody,
@@ -848,6 +890,7 @@ const openAdd = () => {
                       { label: "Date Placed",    value: fmtDate(detail.createdAt) },
                       { label: "Total Amount",   value: fmt(detail.totalPrice) },
                       { label: "Payment Status", value: <Badge paid={detail.isPaid} /> },
+                      { label: "Order Status",   value: <StatusBadge status={detail.status || detail.orderStatus} /> },
                       ...(detail.isPaid && detail.paidAt
                         ? [{ label: "Paid At", value: fmtDate(detail.paidAt) }] : []),
                       { label: "Items",          value: `${detail.orderItems?.length || 0} product(s)` },
@@ -875,6 +918,35 @@ const openAdd = () => {
                     </div>
                     ));
                   })()}
+
+                  {/* Customer confirms receipt once the order has shipped */}
+                  {!detail.isDelivered && (detail.status || detail.orderStatus || "").toLowerCase() === "shipped" && (
+                    <div style={{ marginTop: 18, paddingTop: 4 }}>
+                      {receiveError && (
+                        <p style={{ color: T.red, fontSize: 12, marginBottom: 10, fontFamily: T.fontBody }}>{receiveError}</p>
+                      )}
+                      <motion.button whileHover={!receiving ? { scale: 1.02 } : {}} whileTap={!receiving ? { scale: 0.97 } : {}}
+                        disabled={receiving}
+                        onClick={() => handleMarkReceived(detail._id)}
+                        style={{
+                          width: "100%", padding: "12px", borderRadius: 12, border: "none",
+                          background: T.green, color: T.goldLight, cursor: receiving ? "not-allowed" : "pointer",
+                          fontFamily: T.fontBody, fontSize: 14, fontWeight: 700, letterSpacing: "0.04em",
+                          opacity: receiving ? 0.7 : 1,
+                          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                        }}>
+                        {receiving && <Spinner size={14} color={T.goldLight} />}
+                        {receiving ? "Updating…" : "✓ I've Received This Order"}
+                      </motion.button>
+                    </div>
+                  )}
+                  {detail.isDelivered && (
+                    <div style={{ marginTop: 18, textAlign: "center" }}>
+                      <span style={{ fontSize: 12, color: "#166534", fontFamily: T.fontBody, fontWeight: 700 }}>
+                        ✓ Marked as received{detail.deliveredAt ? ` on ${fmtDate(detail.deliveredAt)}` : ""}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -1348,12 +1420,15 @@ const Dashboard = () => {
   }, [navigate]);
 
   // ── Fetch orders ───────────────────────────────────────────────────────
-  useEffect(() => {
+  const loadOrders = useCallback(() => {
+    setOrdLoading(true);
     api.get("/orders/my")
       .then(r => setOrders(Array.isArray(r.data) ? r.data : r.data?.orders || []))
       .catch(() => setOrders([]))
       .finally(() => setOrdLoading(false));
   }, []);
+
+  useEffect(() => { loadOrders(); }, [loadOrders]);
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem("tn_token");
@@ -1366,7 +1441,7 @@ const Dashboard = () => {
       case "home":      return <SectionHome />;
       case "dashboard": return <SectionDashboard user={user} orders={orders} ordersLoading={ordLoading} setActive={setActive} />;
       case "profile":   return <SectionProfile user={user} loading={userLoading} />;
-      case "orders":    return <SectionOrders orders={orders} loading={ordLoading} />;
+      case "orders":    return <SectionOrders orders={orders} loading={ordLoading} onRefresh={loadOrders} />;
       case "products":  return <SectionProducts user={user} />;
       default:          return null;
     }
