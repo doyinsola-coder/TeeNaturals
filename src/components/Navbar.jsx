@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FaBars, FaTimes, FaShoppingBag, FaLeaf } from "react-icons/fa";
+import { FaBars, FaTimes, FaShoppingBag, FaLeaf, FaTachometerAlt, FaHome, FaUser, FaSignOutAlt, FaCog, FaBoxOpen, FaUsers } from "react-icons/fa";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import api from "../api/axios";
@@ -86,10 +86,10 @@ const NAV_LINKS = [
 
 
 const ADMIN_LINKS = [
-  { name: "Overview", href: "/admin",          icon: "◈" },
-  // { name: "Products", href: "/admin/products",  icon: "🌿" },
-  // { name: "Orders",   href: "/admin/orders",    icon: "📦" },
-  // { name: "Users",    href: "/admin/users",     icon: "👥" },
+  { name: "Overview", href: "/admin",          icon: FaTachometerAlt },
+  // { name: "Products", href: "/admin/products",  icon: FaLeaf },
+  // { name: "Orders",   href: "/admin/orders",    icon: FaBoxOpen },
+  // { name: "Users",    href: "/admin/users",     icon: FaUsers },
 ];
 
 const LogoLeafLeft = () => (
@@ -288,14 +288,14 @@ const UserDropdown = ({ profile, onLogout }) => {
             {/* Links */}
             <div className="py-1.5">
               {[
-                { icon: "🏠", label: "My Dashboard",  to: "/dashboard"          },
-                { icon: "👤", label: "My Profile",    to: "/dashboard/profile"   },
+                { icon: FaHome, label: "My Dashboard",  to: "/dashboard"          },
+                { icon: FaUser, label: "My Profile",    to: "/dashboard/profile"   },
               ].map((item) => (
                 <Link key={item.to} to={item.to}
                   className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold
                     text-white/65 hover:text-white hover:bg-white/07
                     transition-colors duration-150">
-                  <span>{item.icon}</span>{item.label}
+                  <span><item.icon /></span>{item.label}
                 </Link>
               ))}
               <div className="mx-3 my-1.5 h-px bg-white/08" />
@@ -303,7 +303,7 @@ const UserDropdown = ({ profile, onLogout }) => {
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-bold
                   text-[rgba(218,80,70,0.85)] hover:text-[rgba(218,80,70,1)]
                   hover:bg-[rgba(218,54,51,0.08)] transition-colors duration-150">
-                <span>🚪</span> Sign out
+                <span><FaSignOutAlt /></span> Sign out
               </button>
             </div>
           </motion.div>
@@ -403,14 +403,14 @@ const AdminDropdown = ({ profile, onLogout }) => {
               <Link to="/admin/settings"
                 className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-semibold
                   text-white/55 hover:text-white hover:bg-white/05 transition-colors duration-150">
-                <span>⚙️</span> Settings
+                <span><FaCog /></span> Settings
               </Link>
               <div className="mx-3 my-1.5 h-px bg-white/07" />
               <button onClick={onLogout}
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-[13px] font-bold
                   text-[rgba(218,80,70,0.85)] hover:text-[rgba(218,80,70,1)]
                   hover:bg-[rgba(218,54,51,0.08)] transition-colors duration-150">
-                <span>🚪</span> Sign out
+                <span><FaSignOutAlt /></span> Sign out
               </button>
             </div>
           </motion.div>
@@ -552,14 +552,14 @@ const MobileDrawer = ({ open, onClose, profile, onLogout }) => {
                   className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl
                     text-[13px] font-bold text-white/75 border border-white/18
                     hover:bg-white/06 hover:border-white/30 transition-all">
-                  🏠 My Dashboard
+                  <FaHome style={{display:"inline",marginRight:6,verticalAlign:"middle"}} /> My Dashboard
                 </Link>
                 <button onClick={() => { onClose(); onLogout(); }}
                   className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl
                     text-[13px] font-bold text-[rgba(218,80,70,0.85)]
                     border border-[rgba(218,54,51,0.25)] hover:bg-[rgba(218,54,51,0.08)]
                     transition-all">
-                  🚪 Sign out
+                  <FaSignOutAlt style={{display:"inline",marginRight:6,verticalAlign:"middle"}} /> Sign out
                 </button>
               </>
             )}
@@ -638,7 +638,7 @@ const AdminMobileDrawer = ({ open, onClose, profile, onLogout }) => {
                       }`}>
                     <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0
                       bg-white/06 text-base">
-                      {link.icon}
+                      <link.icon />
                     </span>
                     <span className="font-semibold text-sm">{link.name}</span>
                     {isActive(link.href) && (
@@ -656,14 +656,14 @@ const AdminMobileDrawer = ({ open, onClose, profile, onLogout }) => {
                 className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl
                   text-[13px] font-bold text-white/65 border border-white/12
                   hover:bg-white/05 hover:text-white transition-all">
-                ⚙️ Settings
+                <FaCog style={{display:"inline",marginRight:6,verticalAlign:"middle"}} /> Settings
               </Link>
               <button onClick={() => { onClose(); onLogout(); }}
                 className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl
                   text-[13px] font-bold text-[rgba(218,80,70,0.85)]
                   border border-[rgba(218,54,51,0.25)] hover:bg-[rgba(218,54,51,0.1)]
                   transition-all">
-                🚪 Sign out
+                <FaSignOutAlt style={{display:"inline",marginRight:6,verticalAlign:"middle"}} /> Sign out
               </button>
             </div>
           </motion.div>
@@ -771,7 +771,7 @@ const TeeNaturalNavbar = () => {
                         ? "bg-[rgba(212,175,55,0.15)] text-[#d4af37] border border-[rgba(212,175,55,0.22)]"
                         : "text-white/50 hover:text-white hover:bg-white/06 border border-transparent"
                       }`}>
-                    <span className="text-[13px]">{link.icon}</span>
+                    <span className="text-[13px]"><link.icon /></span>
                     {link.name}
                     {active && (
                       <motion.span layoutId="adminActiveBar"

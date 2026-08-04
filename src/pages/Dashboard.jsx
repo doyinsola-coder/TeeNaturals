@@ -4,6 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import api from "../api/axios";
 import { useSearchParams } from "react-router-dom";
+import {
+  FaHome, FaTachometerAlt, FaUser, FaBoxOpen, FaLeaf, FaInbox,
+  FaExclamationTriangle, FaMoneyBillWave, FaCheckCircle, FaCheck,
+  FaCrown, FaEnvelope, FaIdBadge, FaStar, FaSearch, FaTimes,
+} from "react-icons/fa";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DESIGN TOKENS — TeeNatural brand
@@ -116,7 +121,7 @@ const RoleBadge = ({ role }) => (
     color: role === "admin" ? "#92600a" : T.greenMid,
     border: `1px solid ${role === "admin" ? "rgba(212,175,55,0.3)" : "rgba(45,90,71,0.2)"}`,
   }}>
-    {role === "admin" ? "⭐ Admin" : "🌿 Member"}
+    {role === "admin" ? <><FaCrown style={{ marginRight: 3 }} /> Admin</> : <><FaLeaf style={{ marginRight: 3 }} /> Member</>}
   </span>
 );
 
@@ -169,11 +174,11 @@ const StatCard = ({ icon, label, value, sub, delay = 0 }) => (
 // NAV ITEMS
 // ─────────────────────────────────────────────────────────────────────────────
 const NAV = [
-    { id: "home", icon: "🏠",  label: "Home"  },
-  { id: "dashboard", icon: "◈",  label: "Dashboard"  },
-  { id: "profile",   icon: "✦",  label: "Profile"    },
-  { id: "orders",    icon: "📦", label: "Orders"     },
-  { id: "products",  icon: "🌿", label: "Products"   },
+    { id: "home", icon: FaHome,  label: "Home"  },
+  { id: "dashboard", icon: FaTachometerAlt,  label: "Dashboard"  },
+  { id: "profile",   icon: FaUser,  label: "Profile"    },
+  { id: "orders",    icon: FaBoxOpen, label: "Orders"     },
+  { id: "products",  icon: FaLeaf, label: "Products"   },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -230,7 +235,7 @@ const Sidebar = ({ active, setActive, user, onLogout, mobileOpen, setMobileOpen 
                 transition: "background 0.18s, color 0.18s",
               }}
             >
-              <span style={{ fontSize: 16, width: 20, textAlign: "center", flexShrink: 0 }}>{item.icon}</span>
+              <span style={{ fontSize: 16, width: 20, textAlign: "center", flexShrink: 0, display: "flex", justifyContent: "center" }}><item.icon /></span>
               <span>{item.label}</span>
               {isActive && (
                 <motion.div layoutId="nav-pip" style={{ marginLeft: "auto", width: 6, height: 6,
@@ -384,9 +389,9 @@ const Topbar = ({ active, user, onLogout, onMenuClick }) => {
         </div>
         <div
           className="w-[38px] h-[38px] rounded-xl flex items-center justify-center text-[18px] shadow-[0_4px_12px_rgba(212,175,55,0.35)]"
-          style={{ background: `linear-gradient(135deg, ${T.gold}, ${T.goldLight})` }}
+          style={{ background: `linear-gradient(135deg, ${T.gold}, ${T.goldLight})`, color: T.green }}
         >
-          🌿
+          <FaLeaf />
         </div>
       </div>
 
@@ -432,7 +437,7 @@ const SectionDashboard = ({ user, orders, ordersLoading, setActive }) => {
           </p>
           <h2 style={{ fontFamily: T.fontDisplay, color: "white", fontSize: 28,
             fontWeight: 700, margin: "0 0 6px", lineHeight: 1.2 }}>
-            {user?.name || "Natural Beauty Lover"} 🌿
+            {user?.name || "Natural Beauty Lover"} <FaLeaf style={{ display: "inline", fontSize: "0.75em", verticalAlign: "middle" }} />
           </h2>
           <p style={{ fontFamily: T.fontBody, color: "rgba(255,255,255,0.6)",
             fontSize: 14, margin: 0 }}>
@@ -443,9 +448,9 @@ const SectionDashboard = ({ user, orders, ordersLoading, setActive }) => {
 
       {/* Stat cards */}
       <div className="tn-stat-grid">
-        <StatCard icon="📦" label="Total Orders"  value={ordersLoading ? "—" : totalOrders}        sub="All time"              delay={0.05} />
-        <StatCard icon="💰" label="Total Spent"   value={ordersLoading ? "—" : fmt(totalSpent)}    sub="Across all orders"    delay={0.12} />
-        <StatCard icon="✅" label="Paid Orders"   value={ordersLoading ? "—" : paidOrders}         sub={`${totalOrders - paidOrders} pending`} delay={0.19} />
+        <StatCard icon={<FaBoxOpen />} label="Total Orders"  value={ordersLoading ? "—" : totalOrders}        sub="All time"              delay={0.05} />
+        <StatCard icon={<FaMoneyBillWave />} label="Total Spent"   value={ordersLoading ? "—" : fmt(totalSpent)}    sub="Across all orders"    delay={0.12} />
+        <StatCard icon={<FaCheckCircle />} label="Paid Orders"   value={ordersLoading ? "—" : paidOrders}         sub={`${totalOrders - paidOrders} pending`} delay={0.19} />
       </div>
 
       {/* Recent orders mini table */}
@@ -469,7 +474,7 @@ const SectionDashboard = ({ user, orders, ordersLoading, setActive }) => {
         {ordersLoading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: 40 }}><Spinner /></div>
         ) : recentOrders.length === 0 ? (
-          <EmptyState icon="📭" title="No orders yet"
+          <EmptyState icon={<FaInbox />} title="No orders yet"
             sub="Your orders will appear here once you've made a purchase."
             action={{ label: "Browse Products", fn: () => setActive("products") }} />
         ) : (
@@ -508,14 +513,14 @@ const SectionProfile = ({ user, loading }) => {
   if (loading) return (
     <div style={{ display: "flex", justifyContent: "center", paddingTop: 80 }}><Spinner size={32} /></div>
   );
-  if (!user) return <EmptyState icon="👤" title="Profile unavailable" sub="Could not load your profile." />;
+  if (!user) return <EmptyState icon={<FaUser />} title="Profile unavailable" sub="Could not load your profile." />;
 
   const initials = user.name?.split(" ").map(w => w[0]).join("").toUpperCase().slice(0,2) || "U";
   const infoRows = [
-    { label: "Full Name",  value: user.name,  icon: "✦" },
-    { label: "Email",      value: user.email, icon: "◎" },
-    { label: "Account ID", value: shortId(user._id), icon: "⬡" },
-    { label: "Status",        value: user.role?.charAt(0).toUpperCase() + user.role?.slice(1), icon: "★" },
+    { label: "Full Name",  value: user.name,  icon: <FaUser /> },
+    { label: "Email",      value: user.email, icon: <FaEnvelope /> },
+    { label: "Account ID", value: shortId(user._id), icon: <FaIdBadge /> },
+    { label: "Status",        value: user.role?.charAt(0).toUpperCase() + user.role?.slice(1), icon: <FaStar /> },
   ];
 
   return (
@@ -697,7 +702,7 @@ const Modal = ({ open, onClose, title, children, width=520 }) => (
                 onClick={onClose}
                 style={{ width:30,height:30,borderRadius:"50%",border:"1.5px solid rgba(255,255,255,0.2)",
                   background:"rgba(255,255,255,0.08)",color:"white",cursor:"pointer",fontSize:14,
-                  display:"flex",alignItems:"center",justifyContent:"center" }}>✕</motion.button>
+                  display:"flex",alignItems:"center",justifyContent:"center" }}><FaTimes style={{fontSize:12}} /></motion.button>
             </div>
             <div style={{ padding:"24px" }}>{children}</div>
           </div>
@@ -784,7 +789,7 @@ const openAdd = () => {
         {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: 60 }}><Spinner size={28} /></div>
         ) : sorted.length === 0 ? (
-          <EmptyState icon="📭" title="No orders here" sub="Try adjusting the filter above."
+          <EmptyState icon={<FaInbox />} title="No orders here" sub="Try adjusting the filter above."
           action={{ label:"Add Order", fn:openAdd }}  />
         ) : (
           <div style={{ overflowX: "auto" }}>
@@ -878,7 +883,7 @@ const openAdd = () => {
                       background: "rgba(255,255,255,0.1)", color: "white", cursor: "pointer",
                       fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center",
                       fontWeight: 700 }}>
-                    ✕
+                    <FaTimes />
                   </motion.button>
                 </div>
 
@@ -936,14 +941,14 @@ const openAdd = () => {
                           display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                         }}>
                         {receiving && <Spinner size={14} color={T.goldLight} />}
-                        {receiving ? "Updating…" : "✓ I've Received This Order"}
+                        {receiving ? "Updating…" : (<><FaCheck style={{marginRight:6}} /> I've Received This Order</>)}
                       </motion.button>
                     </div>
                   )}
                   {detail.isDelivered && (
                     <div style={{ marginTop: 18, textAlign: "center" }}>
                       <span style={{ fontSize: 12, color: "#166534", fontFamily: T.fontBody, fontWeight: 700 }}>
-                        ✓ Marked as received{detail.deliveredAt ? ` on ${fmtDate(detail.deliveredAt)}` : ""}
+                        <FaCheckCircle style={{marginRight:5, verticalAlign:"middle"}} />Marked as received{detail.deliveredAt ? ` on ${fmtDate(detail.deliveredAt)}` : ""}
                       </span>
                     </div>
                   )}
@@ -1014,7 +1019,7 @@ const ShippingModal = ({ open, onClose, initialAddress, onConfirm, submitting })
                     onClick={onClose}
                     style={{ width: 30, height: 30, borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.2)",
                       background: "rgba(255,255,255,0.08)", color: "white", cursor: "pointer", fontSize: 14,
-                      display: "flex", alignItems: "center", justifyContent: "center" }}>✕</motion.button>
+                      display: "flex", alignItems: "center", justifyContent: "center" }}><FaTimes style={{fontSize:12}} /></motion.button>
                 )}
               </div>
 
@@ -1173,7 +1178,7 @@ const SectionProducts = ({ user }) => {
         {/* Search */}
         <div style={{ position: "relative" }}>
           <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)",
-            fontSize: 14, opacity: 0.4 }}>🔍</span>
+            fontSize: 14, opacity: 0.4, display:"flex" }}><FaSearch /></span>
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search products…"
             style={{
@@ -1189,9 +1194,9 @@ const SectionProducts = ({ user }) => {
       {loading ? (
         <div style={{ display: "flex", justifyContent: "center", paddingTop: 60 }}><Spinner size={28} /></div>
       ) : error ? (
-        <EmptyState icon="⚠️" title="Error loading products" sub={error} />
+        <EmptyState icon={<FaExclamationTriangle />} title="Error loading products" sub={error} />
       ) : filtered.length === 0 ? (
-        <EmptyState icon="🌿" title="No products found" sub="Try a different search term." />
+        <EmptyState icon={<FaLeaf />} title="No products found" sub="Try a different search term." />
       ) : (
         <div className="tn-prod-grid">
           {filtered.map((p, i) => (
@@ -1212,7 +1217,7 @@ const SectionProducts = ({ user }) => {
                 ) : (
                   <div style={{ width: "100%", height: "100%", display: "flex",
                     alignItems: "center", justifyContent: "center", fontSize: 40, opacity: 0.4 }}>
-                    🌿
+                    <FaLeaf />
                   </div>
                 )}
                 {/* Price badge overlay */}
@@ -1282,7 +1287,7 @@ const SectionProducts = ({ user }) => {
                     onClick={closeProduct}
                     style={{ width: 30, height: 30, borderRadius: "50%", border: "1.5px solid rgba(255,255,255,0.2)",
                       background: "rgba(255,255,255,0.08)", color: "white", cursor: "pointer", fontSize: 14,
-                      display: "flex", alignItems: "center", justifyContent: "center" }}>✕</motion.button>
+                      display: "flex", alignItems: "center", justifyContent: "center" }}><FaTimes style={{fontSize:12}} /></motion.button>
                 </div>
 
                 <div style={{ padding: 24 }}>
@@ -1493,7 +1498,7 @@ const Dashboard = () => {
         <footer style={{ padding: "16px 24px", borderTop: `1px solid ${T.border}`,
           display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 14 }}>🌿</span>
+            <span style={{ fontSize: 14, color: T.green, display:"inline-flex" }}><FaLeaf /></span>
             <span style={{ fontFamily: T.fontDisplay, fontSize: 13, fontWeight: 700, color: T.green }}>TeeNatural</span>
             <span style={{ fontFamily: T.fontBody, fontSize: 12, color: T.muted }}>Dashboard</span>
           </div>

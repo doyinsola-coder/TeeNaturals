@@ -5,6 +5,12 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import api from "../api/axios";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import {
+  FaHome, FaTachometerAlt, FaLeaf, FaBoxOpen, FaUsers, FaCog,
+  FaUser, FaExclamationTriangle, FaChartLine, FaMoneyBillWave,
+  FaInbox, FaSearch, FaTimes, FaCheckCircle, FaTimesCircle, FaInfoCircle,
+  FaCheck, FaMapMarkerAlt, FaPlug, FaEnvelope, FaIdBadge, FaStar,
+} from "react-icons/fa";
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -218,7 +224,7 @@ const Modal = ({ open, onClose, title, children, width=520 }) => (
                 onClick={onClose}
                 style={{ width:30,height:30,borderRadius:"50%",border:"1.5px solid rgba(255,255,255,0.2)",
                   background:"rgba(255,255,255,0.08)",color:"white",cursor:"pointer",fontSize:14,
-                  display:"flex",alignItems:"center",justifyContent:"center" }}>✕</motion.button>
+                  display:"flex",alignItems:"center",justifyContent:"center" }}><FaTimes style={{fontSize:12}} /></motion.button>
             </div>
             <div style={{ padding:"24px" }}>{children}</div>
           </div>
@@ -238,7 +244,7 @@ const Toast = ({ msg, type, onClose }) => {
         border:`1px solid ${colors[type]||T.border}`, boxShadow:T.shadowLg,
         fontFamily:T.fontBody, fontSize:13, color:T.textPri, display:"flex",
         alignItems:"center", gap:10, maxWidth:360, marginBottom:8 }}>
-      <span style={{fontSize:16}}>{type==="success"?"✅":type==="error"?"❌":"ℹ️"}</span>
+      <span style={{fontSize:16,display:"inline-flex"}}>{type==="success"?<FaCheckCircle/>:type==="error"?<FaTimesCircle/>:<FaInfoCircle/>}</span>
       {msg}
     </motion.div>
   );
@@ -259,12 +265,12 @@ const Confirm = ({ open, title, sub, onConfirm, onCancel }) => (
 // NAV CONFIG
 // ─────────────────────────────────────────────────────────────────────────────
 const NAV = [
-  { id:"home",  icon:"🏠",  label:"Home"  },
-  { id:"overview",  icon:"◈",  label:"Overview"  },
-  { id:"products",  icon:"🌿", label:"Products"  },
-  { id:"orders",    icon:"📦", label:"Orders"    },
-  { id:"users",     icon:"👥", label:"Users"     },
-  { id:"settings",  icon:"⚙️", label:"Settings"  },
+  { id:"home",  icon:FaHome,  label:"Home"  },
+  { id:"overview",  icon:FaTachometerAlt,  label:"Overview"  },
+  { id:"products",  icon:FaLeaf, label:"Products"  },
+  { id:"orders",    icon:FaBoxOpen, label:"Orders"    },
+  { id:"users",     icon:FaUsers, label:"Users"     },
+  { id:"settings",  icon:FaCog, label:"Settings"  },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -279,7 +285,7 @@ const Sidebar = ({ active, setActive, profile, onLogout, mobileOpen, setMobileOp
           <div style={{ width:36,height:36,borderRadius:10, flexShrink:0,
             background:`linear-gradient(135deg,${T.gold},${T.goldLight})`,
             display:"flex",alignItems:"center",justifyContent:"center",
-            fontSize:17, boxShadow:`0 4px 12px rgba(212,175,55,0.4)` }}>🌿</div>
+            fontSize:17, boxShadow:`0 4px 12px rgba(212,175,55,0.4)`, color:T.green }}><FaLeaf /></div>
           <div>
             <div style={{ fontFamily:T.fontDisplay, fontSize:15, fontWeight:700, color:T.textPri }}>TeeNatural</div>
             <div style={{ fontFamily:T.fontBody, fontSize:10, color:T.gold, letterSpacing:"0.1em", textTransform:"uppercase" }}>Admin Panel</div>
@@ -303,7 +309,7 @@ const Sidebar = ({ active, setActive, profile, onLogout, mobileOpen, setMobileOp
                 color: on ? T.goldLight : T.textSec,
                 fontFamily:T.fontBody, fontSize:13, fontWeight: on ? 700 : 500,
                 transition:"all 0.18s" }}>
-              <span style={{ fontSize:15, width:20, textAlign:"center", flexShrink:0 }}>{item.icon}</span>
+              <span style={{ fontSize:15, width:20, textAlign:"center", flexShrink:0, display:"flex", justifyContent:"center" }}><item.icon /></span>
               <span style={{ flex:1 }}>{item.label}</span>
               {on && <motion.div layoutId="sidebar-pip"
                 style={{ width:5,height:5,borderRadius:"50%",background:T.gold,
@@ -465,7 +471,7 @@ const RevenueChart = ({ orders }) => {
       </div>
       {!hasAnyRevenue ? (
         <div style={{ padding:"40px 22px 30px" }}>
-          <EmptyState icon="📈" title="No revenue yet" sub="Paid orders will chart here as they come in." />
+          <EmptyState icon={<FaChartLine />} title="No revenue yet" sub="Paid orders will chart here as they come in." />
         </div>
       ) : (
         <div style={{ padding:"8px 12px 16px", height:240 }}>
@@ -510,10 +516,10 @@ const SectionOverview = ({ stats, orders, setActive }) => {
     <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
       {/* Stats */}
       <div className="tn-stat-grid">
-        <StatCard icon="👥" label="Total Users"    value={stats.users}    sub="Registered accounts" delay={0.04} accent="rgba(56,139,253,0.15)" />
-        <StatCard icon="📦" label="Total Orders"   value={stats.orders}   sub="All time"            delay={0.1}  accent="rgba(212,175,55,0.15)" />
-        <StatCard icon="💰" label="Total Revenue"  value={fmtMoney(stats.revenue)} sub="From paid orders" delay={0.16} accent="rgba(35,134,54,0.15)" />
-        <StatCard icon="🌿" label="Products"       value={stats.products} sub="In catalogue"        delay={0.22} accent="rgba(61,122,96,0.2)" />
+        <StatCard icon={<FaUsers />} label="Total Users"    value={stats.users}    sub="Registered accounts" delay={0.04} accent="rgba(56,139,253,0.15)" />
+        <StatCard icon={<FaBoxOpen />} label="Total Orders"   value={stats.orders}   sub="All time"            delay={0.1}  accent="rgba(212,175,55,0.15)" />
+        <StatCard icon={<FaMoneyBillWave />} label="Total Revenue"  value={fmtMoney(stats.revenue)} sub="From paid orders" delay={0.16} accent="rgba(35,134,54,0.15)" />
+        <StatCard icon={<FaLeaf />} label="Products"       value={stats.products} sub="In catalogue"        delay={0.22} accent="rgba(61,122,96,0.2)" />
       </div>
 
       {/* Revenue trend */}
@@ -531,7 +537,7 @@ const SectionOverview = ({ stats, orders, setActive }) => {
           <Btn size="sm" variant="ghost" onClick={()=>setActive("orders")}>View all →</Btn>
         </div>
         {!recent.length ? (
-          <EmptyState icon="📭" title="No orders yet" sub="Orders will appear here." />
+          <EmptyState icon={<FaInbox />} title="No orders yet" sub="Orders will appear here." />
         ) : (
           <div style={{ overflowX:"auto" }}>
             <table className="tn-tbl">
@@ -618,14 +624,14 @@ const uploadAvatar = async (file) => {
   ...prev,
   image: imageUrl,
 }));
-    // toast("Image uploaded successfully 🖼️", "success");
+    // toast("Image uploaded successfully", "success");
 
     // toast("Profile picture updated!", "success");
     return imageUrl;
 
   } catch (err) {
     console.error("Upload error:", err);
-    // toast("Image upload failed 😢", "error");
+    // toast("Image upload failed", "error");
     return null;
   }
 };
@@ -700,7 +706,7 @@ console.log("Selected file:", file);
         </div>
         <div style={{ display:"flex", gap:10, alignItems:"center" }}>
           <div style={{ position:"relative" }}>
-            <span style={{ position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",fontSize:13,opacity:0.4 }}>🔍</span>
+            <span style={{ position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",fontSize:13,opacity:0.4, display:"flex" }}><FaSearch /></span>
             <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search…"
               style={{ paddingLeft:32,paddingRight:12,paddingTop:8,paddingBottom:8,
                 borderRadius:10,border:`1px solid ${T.border}`,background:T.surfaceEl,
@@ -719,7 +725,7 @@ console.log("Selected file:", file);
         {loading ? (
           <div style={{ display:"flex",justifyContent:"center",padding:60 }}><Spinner size={28} /></div>
         ) : filtered.length===0 ? (
-          <EmptyState icon="🌿" title="No products found" sub="Add your first product to get started."
+          <EmptyState icon={<FaLeaf />} title="No products found" sub="Add your first product to get started."
             action={{ label:"Add Product", fn:openAdd }} />
         ) : (
           <div style={{ overflowX:"auto" }}>
@@ -737,7 +743,7 @@ console.log("Selected file:", file);
                           background:"rgba(61,122,96,0.15)",display:"flex",alignItems:"center",justifyContent:"center" }}>
                           {p.image ? <img src={p.image} alt={p.name}
                             style={{ width:"100%",height:"100%",objectFit:"cover" }} />
-                            : <span style={{ fontSize:18,opacity:0.4 }}>🌿</span>}
+                            : <span style={{ fontSize:18,opacity:0.4, display:"inline-flex" }}><FaLeaf /></span>}
                         </div>
                         <div>
                           <div style={{ fontWeight:700, color:T.textPri }}>{p.name}</div>
@@ -903,7 +909,7 @@ const SectionOrders = ({ toast }) => {
         </div>
         <div style={{ display:"flex",gap:10,alignItems:"center",flexWrap:"wrap" }}>
           <div style={{ position:"relative" }}>
-            <span style={{ position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",fontSize:13,opacity:0.4 }}>🔍</span>
+            <span style={{ position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",fontSize:13,opacity:0.4, display:"flex" }}><FaSearch /></span>
             <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search order/email…"
               style={{ paddingLeft:32,paddingRight:12,paddingTop:8,paddingBottom:8,
                 borderRadius:10,border:`1px solid ${T.border}`,background:T.surfaceEl,
@@ -932,7 +938,7 @@ const SectionOrders = ({ toast }) => {
         {loading ? (
           <div style={{ display:"flex",justifyContent:"center",padding:60 }}><Spinner size={28} /></div>
         ) : sorted.length === 0 ? (
-          <EmptyState icon="📭" title="No orders found" sub="Orders will appear here once customers purchase." />
+          <EmptyState icon={<FaInbox />} title="No orders found" sub="Orders will appear here once customers purchase." />
         ) : (
           <div style={{ overflowX:"auto" }}>
             <table className="tn-tbl">
@@ -963,12 +969,12 @@ const SectionOrders = ({ toast }) => {
                       {!o.isDelivered && (
                         <Btn size="sm" variant="secondary" loading={saving[o._id]}
                           onClick={()=>updateStatus(o._id,{isDelivered:true,deliveredAt:new Date().toISOString(),status:"delivered",orderStatus:"delivered"},"marked delivered")}>
-                          ✓ Deliver
+                          <FaCheck style={{marginRight:5}} />Deliver
                         </Btn>
                       )}
-                      {o.isDelivered && <span style={{ fontSize:12,color:"#4cc26a" }}>✓ Delivered</span>}
+                      {o.isDelivered && <span style={{ fontSize:12,color:"#4cc26a" }}><FaCheck style={{marginRight:5}} />Delivered</span>}
                       {" "}
-                      <Btn size="sm" variant="ghost" onClick={()=>setAddressOrder(o)}>📍 Address</Btn>
+                      <Btn size="sm" variant="ghost" onClick={()=>setAddressOrder(o)}><FaMapMarkerAlt style={{marginRight:5}} />Address</Btn>
                     </td>
                   </motion.tr>
                 ))}
@@ -1080,7 +1086,7 @@ const SectionUsers = ({ toast, profile }) => {
         </div>
         <div style={{ display:"flex",gap:10,alignItems:"center",flexWrap:"wrap" }}>
           <div style={{ position:"relative" }}>
-            <span style={{ position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",fontSize:13,opacity:0.4 }}>🔍</span>
+            <span style={{ position:"absolute",left:11,top:"50%",transform:"translateY(-50%)",fontSize:13,opacity:0.4, display:"flex" }}><FaSearch /></span>
             <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search name/email…"
               style={{ paddingLeft:32,paddingRight:12,paddingTop:8,paddingBottom:8,
                 borderRadius:10,border:`1px solid ${T.border}`,background:T.surfaceEl,
@@ -1109,7 +1115,7 @@ const SectionUsers = ({ toast, profile }) => {
         {loading ? (
           <div style={{ display:"flex",justifyContent:"center",padding:60 }}><Spinner size={28} /></div>
         ) : filtered.length===0 ? (
-          <EmptyState icon="👥" title="No users found" sub="No users match your search." />
+          <EmptyState icon={<FaUsers />} title="No users found" sub="No users match your search." />
         ) : (
           <div style={{ overflowX:"auto" }}>
             <table className="tn-tbl">
@@ -1262,11 +1268,11 @@ const SectionSettings = ({ profile }) => (
 
     {/* Info rows */}
     {[
-      { label:"Full Name", value:profile?.name, icon:"✦" },
-      { label:"Email",     value:profile?.email, icon:"◎" },
-      { label:"Account ID",value:shortId(profile?._id), icon:"⬡" },
-      { label:"Role",      value:"Administrator", icon:"★" },
-      { label:"API Base",  value:"http://localhost:3000/api", icon:"🔌" },
+      { label:"Full Name", value:profile?.name, icon:<FaUser /> },
+      { label:"Email",     value:profile?.email, icon:<FaEnvelope /> },
+      { label:"Account ID",value:shortId(profile?._id), icon:<FaIdBadge /> },
+      { label:"Role",      value:"Administrator", icon:<FaStar /> },
+      { label:"API Base",  value:"http://localhost:3000/api", icon:<FaPlug /> },
     ].map((r,i)=>(
       <motion.div key={i} initial={{opacity:0,x:-10}} animate={{opacity:1,x:0}}
         transition={{delay:0.15+i*0.06}}
@@ -1286,7 +1292,7 @@ const SectionSettings = ({ profile }) => (
     <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.55}}
       style={{ background:T.surfaceEl,borderRadius:14,border:`1px solid ${T.goldBorder}`,
         padding:"14px 18px",display:"flex",alignItems:"center",gap:10 }}>
-      <span style={{ fontSize:18 }}>🌿</span>
+      <span style={{ fontSize:18, display:"inline-flex", color:T.gold }}><FaLeaf /></span>
       <div>
         <div style={{ fontFamily:T.fontBody,fontSize:12,fontWeight:700,color:T.gold,marginBottom:2 }}>TeeNatural Admin v1.0</div>
         <div style={{ fontFamily:T.fontBody,fontSize:12,color:T.textSec }}>Production-ready admin panel. All CRUD operations active.</div>
@@ -1392,7 +1398,7 @@ const AdminDashboard = () => {
         <footer style={{ padding:"14px 22px", borderTop:`1px solid ${T.border}`,
           display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:8 }}>
           <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-            <span style={{ fontSize:13 }}>🌿</span>
+            <span style={{ fontSize:13, display:"inline-flex", color:T.textPri }}><FaLeaf /></span>
             <span style={{ fontFamily:T.fontDisplay, fontSize:13, fontWeight:700, color:T.textPri }}>TeeNatural</span>
             <span style={{ fontFamily:T.fontBody, fontSize:11, color:T.textMut }}>Admin Dashboard</span>
           </div>

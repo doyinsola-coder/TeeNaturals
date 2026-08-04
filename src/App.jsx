@@ -10,6 +10,7 @@ import About from './pages/About'
 import Contact from './pages/Contact'
 import Navbar from './components/Navbar'
 import TeeNaturalProductsWithProvider from './pages/Products'
+import ProductDetailPage from './pages/ProductDetail'
 import TeeNaturalAbout from './pages/About'
 import NotFound from './pages/NotFound'
 import Register from './pages/Register'
@@ -40,6 +41,7 @@ function App() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/products" element={<TeeNaturalProductsWithProvider />} />
+          <Route path="/products/:id" element={<ProductDetailPage />} />
           <Route path="/about" element={<TeeNaturalAbout />} />
           <Route path="/contact" element={<TeeNaturalContact />} />
           <Route path="/learn-more" element={<LearnMore />} />
